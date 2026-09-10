@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "https://www.greatcampus.tech/assess",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String   @default("System Admin")
+  createdAt DateTime @default(now())
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  section       String       // e.g. "communication", "english", "reasoning", "maths", "banking", "sales"
+  sectionName   String       // e.g. "Communication & Customer Handling"
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String       // "A", "B", "C", or "D"
+  marks         Int          @default(1)
+  negativeMarks Float        @default(0)
+  difficulty    String       @default("Medium") // "Easy", "Medium", "Hard"
+  isActive      Boolean      @default(true)
+  submissions   Submission[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Candidate {
+  id                   String         @id @default(uuid())
+  name                 String
+  email                String
+  phone                String
+  referenceId          String         @unique
+  startedAt            DateTime       @default(now())
+  submittedAt          DateTime?
+  status               String         @default("COMPLETED") // "IN_PROGRESS", "COMPLETED", "EXPIRED"
+  ipAddress            String?
+  device               String?
+  browser              String?
+  score                Float          @default(0)
+  totalPossibleScore   Float          @default(60)
+  percentage           Float          @default(0)
+  hiringRecommendation String         @default("Pending Review") // "Strong Hire", "Hire", "Maybe", "Reject", "Pending Review"
+  tabSwitches          Int            @default(0)
+  fullscreenExits      Int            @default(0)
+  submissions          Submission[]
+  simulation           Simulation?
+  antiCheatLogs        AntiCheatLog[]
+  createdAt            DateTime       @default(now())
+}
+
+model Submission {
+  id             String    @id @default(uuid())
+  candidateId    String
+  candidate      Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption String?   // "A", "B", "C", "D" or null
+  isCorrect      Boolean   @default(false)
+  timeTakenSec   Int       @default(0)
+}
+
+model Simulation {
+  id           String    @id @default(uuid())
+  candidateId  String    @unique
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  audioData    String?   
+  textResponse String?
+  score        Float     @default(0)
+  marksMax     Float     @default(30)
+  feedback     String?
+  gradedAt     DateTime?
+  gradedBy     String?
+  createdAt    DateTime  @default(now())
+}
+
+model AntiCheatLog {
+  id          String    @id @default(uuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  eventType   String    // "TAB_SWITCH", "FULLSCREEN_EXIT", "RIGHT_CLICK", "COPY_PASTE"
+  details     String?
+  timestamp   DateTime  @default(now())
+}
+
+model Settings {
+  id                  String   @id @default("default")
+  examDurationMins    Int      @default(65)
+  passingMarksPercent Float    @default(60)
+  negativeMarking     Boolean  @default(false)
+  shuffleQuestions    Boolean  @default(true)
+  shuffleOptions      Boolean  @default(false)
+  simulationTimeMins  Int      @default(5)
+  companyName         String   @default("Banca Channel Assessment")
+  companyLogo         String?
+  updatedAt           DateTime @updatedAt
+}

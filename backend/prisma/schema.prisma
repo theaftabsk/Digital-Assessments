@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id              String          @id @default(uuid())
+  name            String          @default("GreatCampus Partner")
+  slug            String          @unique @default("default-tenant")
+  logoUrl         String?         // Custom company logo URL / base64 / path
+  portalTitle     String?         // Custom portal branding title
+  primaryColor    String?         @default("#003F72") // Custom company brand color
+  creditLimit     Int             @default(500)   // Total Allocated Exam Credit Limit
+  usedCredit      Int             @default(0)     // Total Exam Credits Consumed
+  status          String          @default("ACTIVE") // ACTIVE, SUSPENDED
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  assessments     Assessment[]
+  admins          Admin[]
+  creditHistories CreditHistory[]
+}
+
+model Admin {
+  id             String            @id @default(uuid())
+  tenantId       String
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  username       String            @unique
+  password       String
+  name           String            @default("HR Administrator")
+  role           String            @default("ADMIN") // "SUPER_ADMIN", "ADMIN", "RECRUITER"
+  createdAt      DateTime          @default(now())
+  adminActions   AdminActionLog[]
+}
+
+model Vendor {
+  id                  String             @id @default(uuid())
+  tenantId            String             @default("default-tenant")
+  vendorCode          String             @unique // e.g. VND-1001
+  name                String             // Vendor Company Name
+  email               String             @unique // Unique Vendor Login Email
+  passwordHash        String             // Bcrypt Hashed Password
+  phone               String?
+  contactPerson       String?
+  apiKey              String?            @unique // Unique API Key for Vendor Agency API integration
+  status              String             @default("ACTIVE") // ACTIVE, SUSPENDED, INACTIVE
+  assignedAssessments VendorAssessment[]
+  candidates          Candidate[]
+  apiLogs             VendorApiLog[]
+  resetLogs           CandidateResetLog[]
+  creditUsed          Int                @default(0) // Total exams launched under this vendor
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model VendorAssessment {
+  id             String      @id @default(uuid())
+  vendorId       String
+  vendor         Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  assessmentId   String
+  assessment     Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assignedBy     String?     // Admin ID or Name
+  status         String      @default("ACTIVE") // ACTIVE, REVOKED
+  assignedAt     DateTime    @default(now())
+
+  @@unique([vendorId, assessmentId])
+}
+
+// Assessment = a single exam session. Each session has a unique link and an active time window.
+// The exam itself is always: 60 Questions + 45 Minutes.
+model Assessment {
+  id                 String             @id @default(uuid())
+  tenantId           String
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name               String
+  slug               String             @unique
+  description        String?
+  durationMins       Int                @default(45)
+  passingPercentage  Float              @default(50.0)
+  maxProctorWarnings Int                @default(6)
+  enableTabSwitch    Boolean            @default(true)
+  enableFullscreen   Boolean            @default(true)
+  enableCopyPaste    Boolean            @default(true)
+  status             String             @default("ACTIVE") // ACTIVE, DRAFT, INACTIVE, ARCHIVED
+  activeFrom         DateTime?          // When the session link becomes accessible to candidates
+  activeUntil        DateTime?          // When the session link expires
+  candidates         Candidate[]
+  vendorAssignments  VendorAssessment[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+// Shared Question Bank — 60 fixed questions used across ALL assessments.
+model Question {
+  id               String            @id @default(uuid())
+  question         String
+  optionA          String
+  optionB          String
+  optionC          String
+  optionD          String
+  correctAnswer    String            // "A", "B", "C", "D"
+  marks            Float             @default(1.0)
+  status           String            @default("ACTIVE")
+  sectionName      String            @default("General") // Section label for report card grouping
+  sectionOrder     Int               @default(0)         // 1-6 for ordering sections in report card
+  attemptQuestions AttemptQuestion[]
+  submissions      Submission[]
+  createdAt        DateTime          @default(now())
+}
+
+model Candidate {
+  id                String        @id @default(uuid())
+  assessmentId      String
+  assessment        Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  vendorId          String?       // NULL = SuperAdmin/Direct, String = Assigned Vendor
+  vendor            Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  name              String
+  email             String
+  phone             String
+  applicationId     String?       // Headstart CRM / Enrolment ID
+  crmCandidateId    String?       // Headstart CRM Candidate ID
+  vendorCandidateId String?       // Vendor Agency Candidate ID
+  referenceId       String        @unique
+  secureToken       String?       @unique @default(uuid()) // Unique secure exam link token
+  emailStatus       String        @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
+  emailSentAt       DateTime?
+  status            String        @default("REGISTERED") // REGISTERED, IN_PROGRESS, COMPLETED, DISQUALIFIED
+  totalAttemptsCount Int          @default(0) // Total exam attempts started
+  resetsCount       Int           @default(0) // Total times session was reset/resent
+  isDeleted         Boolean       @default(false)
+  deletedAt         DateTime?
+  deletedByRole     String?       // "VENDOR" | "ADMIN"
+  deletedById       String?
+  deletedByName     String?
+  deletedReason     String?
+  attempts          ExamAttempt[]
+  emailLogs         EmailLog[]
+  resetLogs         CandidateResetLog[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now()) @updatedAt
+}
+
+model IntegrationConfig {
+  id                       String   @id @default(uuid())
+  tenantId                 String   @unique
+  crmEnabled               Boolean  @default(false) // Standalone mode toggle (CRM OFF by default)
+  crmBaseUrl               String   @default("https://api.headstartcrm.com")
+  crmApiKey                String?
+  api1Endpoint             String   @default("/api/candidates/verify")
+  api2Endpoint             String   @default("/api/candidates/check-assignment")
+  webhookStatusUrl         String?
+  webhookResultUrl         String?
+  webhookReportUrl         String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model SmtpConfig {
+  id          String   @id @default(uuid())
+  tenantId    String   @unique @default("default-tenant")
+  host        String   @default("smtp.gmail.com")
+  port        Int      @default(587)
+  username    String   @default("")
+  password    String   @default("")
+  encryption  String   @default("TLS") // "TLS", "SSL", "NONE"
+  fromName    String   @default("CCE Programme Team")
+  fromEmail   String   @default("recruitment@greatcampus.in")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EmailLog {
+  id             String     @id @default(uuid())
+  candidateId    String?
+  candidate      Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  recipientEmail String
+  candidateName  String?
+  assessmentName String?
+  assessmentId   String?
+  subject        String
+  status         String     @default("PENDING") // "PENDING", "SENT", "DELIVERED", "FAILED"
+  errorMessage   String?
+  retryCount     Int        @default(0)
+  sentAt         DateTime?  @default(now())
+  createdAt      DateTime   @default(now())
+}
+
+model ExamAttempt {
+  id                         String               @id @default(uuid())
+  candidateId                String
+  candidate                  Candidate            @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  status                     String               @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, DISQUALIFIED, EXPIRED
+  durationMinsSnapshot       Int                  @default(45)
+  passingPercentageSnapshot  Float                @default(50.0)
+  maxProctorWarningsSnapshot Int                  @default(6)
+  startedAt                  DateTime             @default(now())
+  submittedAt                DateTime?
+  score                      Float                @default(0)
+  totalPossibleScore         Float                @default(0)
+  percentage                 Float                @default(0)
+  isPassed                   Boolean              @default(false)
+  warningCount               Int                  @default(0)
+  totalTimeSpentSec          Int                  @default(0)
+  creditConsumed             Boolean              @default(true) // Whether this attempt deducted 1 credit
+  // Lock fields
+  lockedAt                   DateTime?
+  lockReason                 String?
+  // Unlock fields
+  unlockedAt                 DateTime?
+  unlockedByAdminId          String?
+  unlockedByAdminName        String?
+  attemptQuestions           AttemptQuestion[]
+  submissions                Submission[]
+  proctoringLogs             ProctoringLog[]
+  screenshots                ProctoringScreenshot[]
+  adminActions               AdminActionLog[]
+}
+
+// Audit trail for every admin unlock action
+model AdminActionLog {
+  id          String      @id @default(uuid())
+  attemptId   String
+  attempt     ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  adminId     String
+  admin       Admin       @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action      String      // "UNLOCK", "LOCK_OVERRIDE", "RESET"
+  reason      String?
+  createdAt   DateTime    @default(now())
+}
+
+model AttemptQuestion {
+  id            String      @id @default(uuid())
+  attemptId     String
+  attempt       ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionOrder Int
+  marks         Float       @default(1.0)
+}
+
+model Submission {
+  id             String      @id @default(uuid())
+  attemptId      String
+  attempt        ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption String?
+  isCorrect      Boolean     @default(false)
+  timeTakenSec   Int         @default(0)
+}
+
+model ProctoringLog {
+  id          String      @id @default(uuid())
+  attemptId   String
+  attempt     ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  eventType   String      // "TAB_SWITCH", "FULLSCREEN_EXIT", "COPY_PASTE", "RIGHT_CLICK", "FACE_NOT_DETECTED", "MULTIPLE_FACES", "CAMERA_OFF"
+  details     String?
+  timestamp   DateTime    @default(now())
+}
+
+model ProctoringScreenshot {
+  id          String      @id @default(uuid())
+  attemptId   String
+  attempt     ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  type        String      // "SCHEDULED" | "WARNING"
+  eventType   String?     // "FACE_NOT_DETECTED" | "MULTIPLE_FACES" | "CAMERA_OFF" | "FACE_NOT_VISIBLE" | "TAB_SWITCH"
+  imageUrl    String      // Relative URL / path to saved image
+  capturedAt  DateTime    @default(now())
+}
+
+// Audit ledger for every credit allocation, deduction, and adjustment
+model CreditHistory {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId     String?
+  vendorName   String?
+  type         String   // "ALLOCATION", "DEDUCTION", "ADJUSTMENT", "REFUND"
+  amount       Int      // e.g. +500, -1, +100, -50
+  balanceAfter Int      // Remaining balance at that timestamp
+  candidateId  String?
+  attemptId    String?
+  description  String   // e.g. "Initial Allocation", "Exam Start: Aftab Sk (Assessment: aa-2812)", "Super Admin Top-up"
+  adminName    String?  // Super admin name who allocated/adjusted
+  createdAt    DateTime @default(now())
+}
+
+// Audit log for all Vendor Agency API requests (Assessment create, Candidate add, Status check, etc.)
+model VendorApiLog {
+  id           String    @id @default(uuid())
+  vendorId     String
+  vendor       Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  apiType      String    // "ASSESSMENT_CREATE", "CANDIDATE_ADD", "ACTIVE_ASSESSMENTS", "CANDIDATE_STATUS"
+  endpoint     String
+  method       String    // "GET", "POST"
+  ipAddress    String?
+  status       String    @default("SUCCESS") // "SUCCESS", "FAILED"
+  statusCode   Int       @default(200)
+  requestBody  String?   // JSON string of request summary
+  responseBody String?   // JSON string of response summary
+  itemsCount   Int       @default(0) // Candidates count or assessments count
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+}
+
+// Audit log for every Candidate Exam Reset, Re-invite, and Session Recovery
+model CandidateResetLog {
+  id               String    @id @default(uuid())
+  candidateId      String
+  candidate        Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  vendorId         String?
+  vendor           Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  performedBy      String    // e.g. "ADMIN:Aftab Sk", "VENDOR_API:VND-1001", "SUPER_ADMIN"
+  performedByRole  String    // "ADMIN" | "VENDOR_API" | "SUPER_ADMIN"
+  action           String    @default("RESET_AND_RESEND") // "RESET_AND_RESEND", "ADMIN_RESET", "API_RESET", "UNLOCK"
+  reasonCode       String    @default("DISQUALIFICATION_RECOVERY") // Predefined Code
+  reasonText       String?   // Formatted description or custom note
+  previousStatus   String?   // "DISQUALIFIED", "COMPLETED", "IN_PROGRESS", "EXPIRED"
+  previousScore    Float?
+  previousWarnings Int?
+  attemptNumber    Int       @default(1)
+  newSecureToken   String
+  newExamUrl       String
+  emailDispatched  Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+}

@@ -174,7 +174,7 @@ export default function CandidateRegistration() {
                   Assessment Access Restricted
                 </h3>
                 <p style={{ fontSize: "14px", color: "#475569", maxWidth: "540px", textAlign: "center", lineHeight: "1.6", margin: 0 }}>
-                  Candidates cannot access generic exam pages directly. You must click the official exam URL provided in your candidate invitation email or Headstart CRM (e.g. <strong style={{ color: "#0284C7" }}>http://localhost:3000/session-slug</strong>).
+                  Candidates cannot access generic exam pages directly. You must click the official exam URL provided in your candidate invitation email or Headstart CRM (e.g. <strong style={{ color: "#0284C7" }}>https://assessment.greatcampus.tech/session-slug</strong>).
                 </p>
               </div>
             ) : (

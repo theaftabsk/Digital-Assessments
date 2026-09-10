@@ -104,7 +104,7 @@ export default function GreatCampusLandingPage() {
           </span>
           <span className="text-white/20 hidden sm:inline">|</span>
           <a
-            href="http://localhost:3000/admin/login"
+            href="https://admin.assessment.greatcampus.tech"
             className="text-slate-300 hover:text-white font-bold flex items-center gap-1"
           >
             <Lock className="w-3 h-3" />
@@ -112,7 +112,7 @@ export default function GreatCampusLandingPage() {
           </a>
           <span className="text-white/20">|</span>
           <a
-            href="http://localhost:3002"
+            href="https://sa.assessment.greatcampus.tech"
             className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1"
           >
             <ShieldCheck className="w-3 h-3" />
@@ -1120,10 +1120,10 @@ export default function GreatCampusLandingPage() {
             <div className="space-y-3">
               <span className="text-xs font-mono uppercase text-white font-bold tracking-wider">Platform Portals</span>
               <ul className="space-y-2 text-slate-400">
-                <li><a href="http://localhost:3000/admin/login" className="hover:text-white transition flex items-center gap-1">Client Admin Portal <ExternalLink className="w-3 h-3" /></a></li>
-                <li><a href="http://localhost:3002" className="hover:text-white transition flex items-center gap-1">Super Admin Portal <ExternalLink className="w-3 h-3" /></a></li>
+                <li><a href="https://admin.assessment.greatcampus.tech" className="hover:text-white transition flex items-center gap-1">Client Admin Portal <ExternalLink className="w-3 h-3" /></a></li>
+                <li><a href="https://sa.assessment.greatcampus.tech" className="hover:text-white transition flex items-center gap-1">Super Admin Portal <ExternalLink className="w-3 h-3" /></a></li>
                 <li><a href="#exam-launcher" className="hover:text-white transition">Candidate Exam Link</a></li>
-                <li><a href="http://localhost:4000/api/docs" className="hover:text-white transition flex items-center gap-1">Swagger API Docs <ExternalLink className="w-3 h-3" /></a></li>
+                <li><a href="https://api.assessment.greatcampus.tech/api/docs" className="hover:text-white transition flex items-center gap-1">Swagger API Docs <ExternalLink className="w-3 h-3" /></a></li>
               </ul>
             </div>
 

@@ -212,13 +212,26 @@ export class CandidatesService {
 
     this.logger.log(`Verifying candidate email: '${email}', AppID: '${appId}', Assessment: '${rawId}'`);
 
-    // Resolve Assessment from DB (by ID or Slug)
+    // Resolve Assessment from DB (by ID, Slug or Name)
     let assessment = await this.prisma.assessment.findFirst({
-      where: { OR: [{ id: rawId }, { slug: rawId }] },
+      where: {
+        OR: [
+          { id: rawId },
+          { slug: rawId },
+          { slug: { equals: rawId, mode: 'insensitive' } },
+          { name: { equals: rawId, mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        tenant: true,
+      },
     });
 
     if (!assessment) {
-      assessment = await this.prisma.assessment.findFirst({ where: { status: 'ACTIVE' } });
+      assessment = await this.prisma.assessment.findFirst({
+        where: { status: 'ACTIVE' },
+        include: { tenant: true },
+      });
     }
 
     if (!assessment) {
@@ -239,7 +252,7 @@ export class CandidatesService {
       throw new BadRequestException('This assessment session is currently inactive.');
     }
 
-    // STRICT CHECK: Find pre-assigned candidate in this assessment session
+    // CHECK: Find candidate in this assessment session
     const candidateFilterOr: any[] = [];
     if (email) {
       candidateFilterOr.push({ email: { equals: email, mode: 'insensitive' } });
@@ -275,11 +288,27 @@ export class CandidatesService {
       },
     });
 
-    // If not found directly in this assessment, check if registered in any active session
+    // Auto-create / register candidate for public exam access if not already in this assessment
     if (!candidate) {
-      candidate = await this.prisma.candidate.findFirst({
+      const existingCandidate = await this.prisma.candidate.findFirst({
         where: {
           OR: candidateFilterOr,
+        },
+      });
+
+      const uniqueSuffix = `${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+      const candidateAppId = appId || existingCandidate?.applicationId || `APP-${uniqueSuffix}`;
+      const candidateRefId = `GC-${uniqueSuffix}`;
+
+      candidate = await this.prisma.candidate.create({
+        data: {
+          name: data.name?.trim() || existingCandidate?.name || (email ? email.split('@')[0] : 'Candidate'),
+          email: email || existingCandidate?.email || `${candidateRefId.toLowerCase()}@candidate.greatcampus.tech`,
+          phone: data.phone?.trim() || existingCandidate?.phone || 'N/A',
+          applicationId: candidateAppId,
+          referenceId: candidateRefId,
+          assessmentId: actualAssessmentId,
+          status: 'REGISTERED',
         },
         include: {
           assessment: {
@@ -301,29 +330,34 @@ export class CandidatesService {
           },
         },
       });
-    }
-
-    // STRICT REJECTION: If candidate email is NOT in the database, deny access!
-    if (!candidate) {
-      throw new ForbiddenException(
-        `Access Denied: The email '${data.email || data.applicationId}' is not registered or assigned to this assessment. Please use your registered email or contact your HR Administrator.`
-      );
+      this.logger.log(`[Public Candidate Created] ID: ${candidate.id}, Email: ${candidate.email}, Assessment: ${actualAssessmentId}`);
     }
 
     // Check if candidate already has a COMPLETED attempt
     const latestAttempt = candidate.attempts ? candidate.attempts[0] : null;
+    const isDemoAssessment = assessment.slug === 'demo' || assessment.name?.toLowerCase() === 'demo';
+
     if (latestAttempt && latestAttempt.status === 'COMPLETED') {
-      const completedTime = latestAttempt.submittedAt || latestAttempt.startedAt || new Date();
-      throw new BadRequestException(
-        `You have already completed this assessment on ${new Date(completedTime).toLocaleString()}. Multiple attempts are not permitted.`
-      );
+      if (!isDemoAssessment) {
+        const completedTime = latestAttempt.submittedAt || latestAttempt.startedAt || new Date();
+        throw new BadRequestException(
+          `You have already completed this assessment on ${new Date(completedTime).toLocaleString()}. Multiple attempts are not permitted.`
+        );
+      }
     }
 
     // Check if candidate is LOCKED or DISQUALIFIED
     if (candidate.status === 'LOCKED' || candidate.status === 'DISQUALIFIED' || latestAttempt?.status === 'LOCKED' || latestAttempt?.status === 'DISQUALIFIED') {
-      throw new BadRequestException(
-        `Your exam session is currently LOCKED due to security flags (${latestAttempt?.warningCount || 3} warnings). Please contact your HR Administrator to unlock your exam.`
-      );
+      if (!isDemoAssessment) {
+        throw new BadRequestException(
+          `Your exam session is currently LOCKED due to security flags (${latestAttempt?.warningCount || 3} warnings). Please contact your HR Administrator to unlock your exam.`
+        );
+      } else {
+        await this.prisma.candidate.update({
+          where: { id: candidate.id },
+          data: { status: 'REGISTERED' },
+        });
+      }
     }
 
     // Update name / phone snapshot if candidate provided fresh values
@@ -1295,7 +1329,12 @@ export class CandidatesService {
   async getAssessmentByIdentifier(identifier: string) {
     const assessment = await this.prisma.assessment.findFirst({
       where: {
-        OR: [{ id: identifier }, { slug: identifier }],
+        OR: [
+          { id: identifier },
+          { slug: identifier },
+          { slug: { equals: identifier, mode: 'insensitive' } },
+          { name: { equals: identifier, mode: 'insensitive' } },
+        ],
       },
       include: {
         tenant: {

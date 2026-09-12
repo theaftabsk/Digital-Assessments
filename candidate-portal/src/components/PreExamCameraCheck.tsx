@@ -181,46 +181,64 @@ export default function PreExamCameraCheck({
   const isFullyReady = cameraActive && faceStatus === "READY";
 
   return (
-    <div style={{ background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: "18px", padding: "18px", marginTop: "4px", marginBottom: "8px" }}>
+    <div style={{
+      background: "rgba(0, 0, 0, 0.02)",
+      border: "1px solid rgba(0, 0, 0, 0.07)",
+      borderRadius: "20px",
+      padding: "20px",
+      marginTop: "6px",
+      marginBottom: "10px"
+    }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: isFullyReady ? "#DCFCE7" : "#E0F2FE", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Camera size={16} color={isFullyReady ? "#16A34A" : brandColor} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: "#000000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Camera size={16} color="#FFFFFF" />
           </div>
           <div>
-            <span style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A", display: "block" }}>
+            <span style={{ fontSize: "13px", fontWeight: 800, color: "#000000", display: "block", letterSpacing: "-0.01em" }}>
               Pre-Exam Device & Webcam Verification
             </span>
-            <span style={{ fontSize: "11px", color: "#64748B" }}>
+            <span style={{ fontSize: "11px", color: "#71717A" }}>
               Required for real-time AI proctored identity monitoring
             </span>
           </div>
         </div>
 
-        {/* Live Status Badge */}
+        {/* Live Status Badge — Apple Frosted Monochrome Pill */}
         <div>
           {isFullyReady ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "12px", background: "#DCFCE7", color: "#15803D", fontSize: "11px", fontWeight: 800, border: "1px solid #BBF7D0" }}>
-              <CheckCircle2 size={12} /> Camera Verified
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 12px", borderRadius: "20px", background: "#000000", color: "#FFFFFF", fontSize: "11px", fontWeight: 800 }}>
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#FFFFFF" }} />
+              Camera Verified
             </span>
           ) : cameraActive ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "12px", background: "#FEF3C7", color: "#B45309", fontSize: "11px", fontWeight: 800, border: "1px solid #FDE68A" }}>
-              <AlertTriangle size={12} /> Align Your Face
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 12px", borderRadius: "20px", background: "rgba(0, 0, 0, 0.06)", color: "#000000", fontSize: "11px", fontWeight: 800, border: "1px solid rgba(0, 0, 0, 0.1)" }}>
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#71717A" }} />
+              Align Your Face
             </span>
           ) : (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "12px", background: "#FEE2E2", color: "#B91C1C", fontSize: "11px", fontWeight: 800, border: "1px solid #FECACA" }}>
-              <VideoOff size={12} /> Camera Inactive
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 12px", borderRadius: "20px", background: "rgba(0, 0, 0, 0.06)", color: "#71717A", fontSize: "11px", fontWeight: 800, border: "1px solid rgba(0, 0, 0, 0.1)" }}>
+              <VideoOff size={11} /> Camera Inactive
             </span>
           )}
         </div>
       </div>
 
       {/* Main Grid: Video Preview & Checklist */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", alignItems: "center" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "18px", alignItems: "center" }}>
         
         {/* Left: Video Preview Box */}
-        <div style={{ position: "relative", width: "100%", height: "180px", borderRadius: "14px", overflow: "hidden", background: "#0F172A", border: isFullyReady ? "2px solid #22C55E" : "2px solid #94A3B8", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+        <div style={{
+          position: "relative",
+          width: "100%",
+          height: "180px",
+          borderRadius: "16px",
+          overflow: "hidden",
+          background: "#18181B",
+          border: isFullyReady ? "2px solid #000000" : "1px solid rgba(0, 0, 0, 0.15)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.06)"
+        }}>
           <video
             ref={videoRef}
             playsInline
@@ -240,7 +258,7 @@ export default function PreExamCameraCheck({
                 width: "100px",
                 height: "130px",
                 borderRadius: "50%",
-                border: isFullyReady ? "2px dashed #22C55E" : "2px dashed rgba(255,255,255,0.6)",
+                border: isFullyReady ? "2px solid rgba(255,255,255,0.9)" : "2px dashed rgba(255,255,255,0.45)",
                 pointerEvents: "none",
               }}
             />
@@ -253,39 +271,41 @@ export default function PreExamCameraCheck({
               bottom: "8px",
               left: "50%",
               transform: "translateX(-50%)",
-              background: isFullyReady ? "rgba(22, 101, 52, 0.92)" : faceStatus === "MULTIPLE_FACES" ? "rgba(180, 83, 9, 0.92)" : "rgba(15, 23, 42, 0.85)",
+              background: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(12px)",
               color: "white",
-              padding: "3px 10px",
+              padding: "4px 12px",
               borderRadius: "20px",
               fontSize: "10px",
               fontWeight: 800,
               display: "flex",
               alignItems: "center",
-              gap: "5px",
+              gap: "6px",
               whiteSpace: "nowrap",
+              border: "1px solid rgba(255, 255, 255, 0.15)"
             }}
           >
             {isFullyReady && (
               <>
-                <UserCheck size={11} color="#4ADE80" />
+                <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#FFFFFF" }} />
                 <span>Candidate Face Verified</span>
               </>
             )}
             {faceStatus === "NO_FACE" && cameraActive && (
               <>
-                <AlertCircle size={11} color="#F87171" />
+                <AlertCircle size={11} color="#FFFFFF" />
                 <span>Center Face in Frame</span>
               </>
             )}
             {faceStatus === "MULTIPLE_FACES" && (
               <>
-                <AlertTriangle size={11} color="#FBBF24" />
+                <AlertTriangle size={11} color="#FFFFFF" />
                 <span>Multiple Faces in Frame</span>
               </>
             )}
             {!cameraActive && (
               <>
-                <VideoOff size={11} color="#F87171" />
+                <VideoOff size={11} color="#A1A1AA" />
                 <span>Waiting for Camera</span>
               </>
             )}
@@ -293,14 +313,14 @@ export default function PreExamCameraCheck({
         </div>
 
         {/* Right: Diagnostic Checklist */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           
           {/* Check 1: Camera Access */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: hasPermission ? "#166534" : "#475569" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: hasPermission ? "#000000" : "#71717A" }}>
             {hasPermission ? (
-              <CheckCircle2 size={15} color="#16A34A" style={{ flexShrink: 0 }} />
+              <CheckCircle2 size={15} color="#000000" style={{ flexShrink: 0 }} />
             ) : (
-              <div style={{ width: "15px", height: "15px", borderRadius: "50%", border: "2px solid #CBD5E1" }} />
+              <div style={{ width: "15px", height: "15px", borderRadius: "50%", border: "1.5px solid #CBD5E1" }} />
             )}
             <span style={{ fontWeight: hasPermission ? 700 : 500 }}>
               {hasPermission ? "Webcam permission granted" : "Waiting for webcam permission"}
@@ -308,11 +328,11 @@ export default function PreExamCameraCheck({
           </div>
 
           {/* Check 2: Single Face Verification */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: isFullyReady ? "#166534" : "#475569" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: isFullyReady ? "#000000" : "#71717A" }}>
             {isFullyReady ? (
-              <CheckCircle2 size={15} color="#16A34A" style={{ flexShrink: 0 }} />
+              <CheckCircle2 size={15} color="#000000" style={{ flexShrink: 0 }} />
             ) : (
-              <div style={{ width: "15px", height: "15px", borderRadius: "50%", border: "2px solid #CBD5E1" }} />
+              <div style={{ width: "15px", height: "15px", borderRadius: "50%", border: "1.5px solid #CBD5E1" }} />
             )}
             <span style={{ fontWeight: isFullyReady ? 700 : 500 }}>
               {isFullyReady ? "Candidate face detected & centered" : "Position face inside the preview box"}
@@ -320,8 +340,8 @@ export default function PreExamCameraCheck({
           </div>
 
           {/* Check 3: Fullscreen & AI Proctor Shield */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#166534" }}>
-            <ShieldCheck size={15} color="#16A34A" style={{ flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#000000" }}>
+            <ShieldCheck size={15} color="#000000" style={{ flexShrink: 0 }} />
             <span style={{ fontWeight: 700 }}>
               Anti-cheating proctoring stream initialized
             </span>
@@ -329,12 +349,12 @@ export default function PreExamCameraCheck({
 
           {/* Error & Retry Button */}
           {errorMsg && (
-            <div style={{ marginTop: "6px", padding: "8px 12px", background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: "10px", fontSize: "11px", color: "#B91C1C", lineHeight: 1.4 }}>
+            <div style={{ marginTop: "6px", padding: "10px 14px", background: "#FFFFFF", border: "1px solid #E4E4E7", borderRadius: "12px", fontSize: "11px", color: "#000000", lineHeight: 1.4 }}>
               {errorMsg}
             </div>
           )}
 
-          <div style={{ marginTop: "4px" }}>
+          <div style={{ marginTop: "6px" }}>
             <button
               type="button"
               onClick={startCamera}
@@ -343,14 +363,15 @@ export default function PreExamCameraCheck({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "6px 12px",
-                borderRadius: "8px",
-                background: "#F1F5F9",
-                border: "1px solid #CBD5E1",
-                color: "#334155",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                background: "#000000",
+                border: "none",
+                color: "#FFFFFF",
                 fontSize: "11px",
                 fontWeight: 700,
                 cursor: "pointer",
+                transition: "opacity 0.2s ease"
               }}
             >
               <RefreshCw size={11} className={isRetrying ? "animate-spin" : ""} />

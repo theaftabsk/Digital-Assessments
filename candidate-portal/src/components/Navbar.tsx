@@ -75,80 +75,102 @@ export default function Navbar({
     .toUpperCase() || "GC";
 
   return (
-    <header className="nb-navbar" style={{ borderBottom: "1px solid #E2E8F0", background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(12px)" }}>
-      <div className="nb-navbar-inner" style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "68px" }}>
-
-        {/* Dynamic White-Label Brand Identity */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
+    <header
+      className="nb-navbar"
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+        background: "rgba(255, 255, 255, 0.78)",
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+        boxShadow: "0 4px 20px -2px rgba(0, 0, 0, 0.03)",
+      }}
+    >
+      <div
+        className="nb-navbar-inner"
+        style={{
+          maxWidth: "1280px",
+          margin: "0 auto",
+          padding: "0 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: "64px",
+        }}
+      >
+        {/* Apple Monochrome Brand Identity */}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
           {tenant.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={tenant.logoUrl}
               alt={tenant.name}
               style={{
-                height: "40px",
+                height: "32px",
                 width: "auto",
-                maxWidth: "160px",
+                maxWidth: "140px",
                 objectFit: "contain",
-                borderRadius: "8px",
-                padding: "2px",
               }}
               onError={(e) => {
                 (e.currentTarget as HTMLElement).style.display = "none";
               }}
             />
           ) : (
-            <div
+            <span
               style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "12px",
-                backgroundColor: tenant.primaryColor,
-                color: "#FFFFFF",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "14px",
-                fontWeight: 900,
-                boxShadow: "0 4px 12px rgba(0, 63, 114, 0.15)",
-                letterSpacing: "0.5px",
+                fontSize: "16px",
+                fontWeight: 800,
+                color: "#000000",
+                letterSpacing: "-0.03em",
+                lineHeight: 1,
               }}
             >
-              {monogram}
-            </div>
-          )}
-
-          <div style={{ height: "30px", width: "1.5px", background: "#E2E8F0", margin: "0 2px" }} className="hidden-mobile" />
-
-          <div style={{ display: "flex", flexDirection: "column" }} className="hidden-mobile">
-            <span style={{ fontSize: "14px", fontWeight: 900, color: "#0F172A", lineHeight: 1.15 }}>
-              {tenant.portalTitle}
-            </span>
-            <span style={{ fontSize: "11px", fontWeight: 800, color: tenant.primaryColor, marginTop: "2px", letterSpacing: "0.3px" }}>
               {tenant.name}
             </span>
+          )}
+
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "4px 10px",
+              borderRadius: "9999px",
+              background: "rgba(0, 0, 0, 0.04)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#71717A",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#000000" }} />
+            <span>Assessment Session</span>
           </div>
         </Link>
 
-        {/* Right Side: Proctored Badge & Candidate Identifier */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {/* Right Side: Proctored Pill & Candidate Identifier */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
               padding: "5px 12px",
-              borderRadius: "20px",
-              backgroundColor: "#F0FDF4",
-              border: "1px solid #BBF7D0",
-              color: "#166534",
+              borderRadius: "9999px",
+              backgroundColor: "rgba(0, 0, 0, 0.04)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
+              color: "#000000",
               fontSize: "11px",
-              fontWeight: 800,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
             }}
           >
-            <ShieldCheck size={14} color="#16A34A" />
-            <span className="hidden-mobile">AI Proctored Environment</span>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#16A34A" }} />
+            <ShieldCheck size={13} color="#000000" />
+            <span className="hidden-mobile">AI Proctored</span>
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "#000000" }} />
           </div>
 
           {mode === "candidate" && candidateName && (
@@ -157,24 +179,22 @@ export default function Navbar({
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "6px 14px",
-                borderRadius: "12px",
-                background: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-                fontSize: "12px",
-                fontWeight: 800,
-                color: "#1E293B",
+                padding: "5px 12px",
+                borderRadius: "9999px",
+                background: "#000000",
+                color: "#FFFFFF",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
               }}
             >
-              <User size={13} color={tenant.primaryColor} />
-              <span className="hidden-mobile" style={{ color: "#64748B", fontWeight: 700 }}>Candidate:</span>
+              <User size={12} color="#FFFFFF" />
               <span style={{ maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {candidateName}
               </span>
             </div>
           )}
         </div>
-
       </div>
     </header>
   );

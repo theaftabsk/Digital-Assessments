@@ -537,7 +537,7 @@ export default function CandidateTestEngine() {
                 <h3 className="test-q-text">{currentQ.question}</h3>
 
                 {/* Options List */}
-                <div className="options-list test-options-list" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "20px" }}>
+                <div className="options-list test-options-list" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "24px" }}>
                   {[
                     { key: "A", val: currentQ.optionA },
                     { key: "B", val: currentQ.optionB },
@@ -555,33 +555,33 @@ export default function CandidateTestEngine() {
                           display: "flex",
                           alignItems: "center",
                           gap: "14px",
-                          padding: "14px 18px",
-                          borderRadius: "14px",
-                          border: `2px solid ${isSel ? "#00AEEF" : "#E2EFF8"}`,
-                          background: isSel ? "#E8F6FF" : "#F8FCFF",
-                          color: isSel ? "#003F72" : "#1A2B40",
+                          padding: "16px 20px",
+                          borderRadius: "16px",
+                          border: isSel ? "1.5px solid #000000" : "1px solid rgba(0, 0, 0, 0.08)",
+                          background: isSel ? "#000000" : "#FFFFFF",
+                          color: isSel ? "#FFFFFF" : "#000000",
                           fontSize: "14px",
                           fontWeight: isSel ? 700 : 600,
                           cursor: "pointer",
                           textAlign: "left",
                           width: "100%",
-                          transition: "all 0.18s ease",
-                          boxShadow: isSel ? "0 4px 14px rgba(0, 174, 239, 0.15)" : "none",
+                          transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                          boxShadow: isSel ? "0 4px 18px rgba(0, 0, 0, 0.12)" : "0 1px 3px rgba(0,0,0,0.02)",
                         }}
                       >
                         <span
                           className="option-key test-opt-key"
                           style={{
-                            width: "32px",
-                            height: "32px",
+                            width: "30px",
+                            height: "30px",
                             borderRadius: "50%",
-                            border: `2px solid ${isSel ? "#00AEEF" : "#CBD5E1"}`,
-                            background: isSel ? "#00AEEF" : "white",
-                            color: isSel ? "white" : "#64748B",
+                            border: isSel ? "1.5px solid #FFFFFF" : "1.5px solid rgba(0, 0, 0, 0.12)",
+                            background: isSel ? "#FFFFFF" : "rgba(0, 0, 0, 0.04)",
+                            color: isSel ? "#000000" : "#71717A",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "13px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             flexShrink: 0,
                           }}
@@ -591,7 +591,9 @@ export default function CandidateTestEngine() {
                         <span className="option-val test-opt-val" style={{ flex: 1, lineHeight: "1.5" }}>
                           {opt.val}
                         </span>
-                        {isSel && <CheckCircle2 size={20} color="#00AEEF" style={{ flexShrink: 0 }} />}
+                        {isSel && (
+                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FFFFFF", flexShrink: 0 }} />
+                        )}
                       </button>
                     );
                   })}
@@ -663,7 +665,7 @@ export default function CandidateTestEngine() {
                   const subQuestions = questions.filter((q) => q.subjectName === subName);
                   return (
                     <div key={subName} style={{ marginBottom: "16px" }}>
-                      <div style={{ fontSize: "12px", fontWeight: 800, color: "#00AEEF", marginBottom: "8px", textTransform: "uppercase" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 800, color: "#000000", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         {subName}
                       </div>
 

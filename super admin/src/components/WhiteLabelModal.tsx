@@ -105,87 +105,87 @@ export default function WhiteLabelModal({
     .toUpperCase() || "CL";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl max-w-lg w-full border border-neutral-200 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-50/60 via-indigo-50/40 to-blue-50/30">
+        <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20 ring-4 ring-purple-100">
-              <Palette className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center shrink-0">
+              <Palette className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-black text-slate-900 tracking-tight">
+              <h2 className="text-sm font-semibold text-neutral-900 tracking-tight">
                 White-Label Customization
               </h2>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Configure brand identity for <strong className="text-purple-700">{tenant.name}</strong> ({tenant.slug})
+              <p className="text-xs text-neutral-500">
+                Configure brand identity for <strong className="text-neutral-900 font-medium">{tenant.name}</strong> ({tenant.slug})
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-5 overflow-y-auto space-y-5">
           {error && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <div className="p-3 bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs rounded-xl flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-2xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="p-3 bg-neutral-50 border border-neutral-200 text-neutral-900 text-xs rounded-xl flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-neutral-900 shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {/* LIVE PREVIEW CARD */}
-          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="bg-slate-100 px-3 py-1.5 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+          <div className="rounded-xl border border-neutral-200 overflow-hidden shadow-2xs">
+            <div className="bg-neutral-50 px-3 py-1.5 border-b border-neutral-200 text-[10px] font-semibold uppercase text-neutral-500 flex items-center justify-between">
               <span>Live Portal Header Preview</span>
-              <span className="text-purple-600 font-bold">Client View</span>
+              <span className="text-neutral-600 font-medium">Client View</span>
             </div>
-            <div className="p-4 bg-white flex items-center justify-between">
+            <div className="p-3.5 bg-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={logoUrl}
                     alt={name}
-                    className="h-9 w-auto max-w-[130px] object-contain rounded-lg border border-slate-200 p-0.5"
+                    className="h-8 w-auto max-w-[120px] object-contain rounded-lg border border-neutral-200 p-0.5"
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = "none";
                     }}
                   />
                 ) : (
                   <div
-                    className="w-9 h-9 rounded-xl text-white font-black flex items-center justify-center text-xs shadow-md"
+                    className="w-8 h-8 rounded-lg text-white font-bold flex items-center justify-center text-xs"
                     style={{ backgroundColor: primaryColor }}
                   >
                     {monogram}
                   </div>
                 )}
                 <div>
-                  <div className="text-xs font-black text-slate-900 leading-tight">
+                  <div className="text-xs font-semibold text-neutral-900 leading-tight">
                     {portalTitle || `${name} Assessment Portal`}
                   </div>
-                  <div className="text-[10px] font-bold" style={{ color: primaryColor }}>
+                  <div className="text-[11px] text-neutral-500 font-medium">
                     {name || "Company Name"}
                   </div>
                 </div>
               </div>
 
               <div
-                className="px-3 py-1 rounded-full text-white text-[11px] font-extrabold shadow-sm"
+                className="px-2.5 py-0.5 rounded-full text-white text-[10px] font-medium"
                 style={{ backgroundColor: primaryColor }}
               >
                 Proctored Session
@@ -196,53 +196,53 @@ export default function WhiteLabelModal({
           <form onSubmit={handleSave} className="space-y-4">
             {/* Company Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 mb-1">
                 Company / Organization Display Name *
               </label>
               <div className="relative">
-                <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Building2 className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Tata AIG Insurance"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                  className="w-full bg-neutral-50/60 border border-neutral-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900 transition"
                 />
               </div>
             </div>
 
             {/* Logo URL */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 mb-1">
                 Company Brand Logo URL (PNG / SVG / WebP)
               </label>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
-                  <ImageIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <ImageIcon className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
                   <input
                     type="url"
                     value={logoUrl}
                     onChange={(e) => setLogoUrl(e.target.value)}
                     placeholder="https://company.com/assets/logo.png"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                    className="w-full bg-neutral-50/60 border border-neutral-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900 transition"
                   />
                 </div>
                 {logoUrl && (
-                  <div className="w-10 h-10 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                  <div className="w-9 h-9 rounded-lg border border-neutral-200 bg-white p-1 flex items-center justify-center shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
                   </div>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-neutral-400 mt-1">
                 Enter an image URL or leave blank to display an automated modern monogram badge.
               </p>
             </div>
 
             {/* Custom Portal Title */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 mb-1">
                 Custom Portal Title (Candidate & Admin Header)
               </label>
               <input
@@ -250,13 +250,13 @@ export default function WhiteLabelModal({
                 value={portalTitle}
                 onChange={(e) => setPortalTitle(e.target.value)}
                 placeholder="e.g. Tata AIG Talent Assessment Portal"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                className="w-full bg-neutral-50/60 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900 transition"
               />
             </div>
 
             {/* Brand Theme Color */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 mb-1">
                 Primary Brand Theme Color
               </label>
               <div className="flex items-center gap-2">
@@ -264,20 +264,20 @@ export default function WhiteLabelModal({
                   type="color"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-10 h-10 rounded-xl border border-slate-200 p-0.5 cursor-pointer bg-white"
+                  className="w-8 h-8 rounded-lg border border-neutral-200 p-0.5 cursor-pointer bg-white shrink-0"
                 />
                 <input
                   type="text"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
                   placeholder="#003F72"
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                  className="flex-1 bg-neutral-50/60 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-medium text-neutral-900 focus:outline-none focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900 transition"
                 />
               </div>
 
               {/* Preset Swatches */}
               <div className="flex items-center gap-2 pt-2">
-                <span className="text-[10px] font-bold text-slate-400">Presets:</span>
+                <span className="text-[11px] text-neutral-400">Presets:</span>
                 {[
                   { name: "Navy", hex: "#003F72" },
                   { name: "Royal Blue", hex: "#2563EB" },
@@ -290,14 +290,13 @@ export default function WhiteLabelModal({
                     key={swatch.hex}
                     type="button"
                     onClick={() => setPrimaryColor(swatch.hex)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-extrabold border transition cursor-pointer hover:scale-105"
-                    style={{
-                      backgroundColor: primaryColor === swatch.hex ? swatch.hex : "#F8FAFC",
-                      color: primaryColor === swatch.hex ? "#FFFFFF" : "#334155",
-                      borderColor: primaryColor === swatch.hex ? swatch.hex : "#E2E8F0",
-                    }}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                      primaryColor === swatch.hex
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                    }`}
                   >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: swatch.hex }} />
+                    <span className="w-2 h-2 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: swatch.hex }} />
                     <span>{swatch.name}</span>
                   </button>
                 ))}
@@ -305,11 +304,11 @@ export default function WhiteLabelModal({
             </div>
 
             {/* Actions */}
-            <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+            <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-xs hover:bg-slate-50 transition cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-neutral-200 text-neutral-700 font-medium text-xs hover:bg-neutral-50 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -317,7 +316,7 @@ export default function WhiteLabelModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold text-xs shadow-lg shadow-purple-500/25 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white font-medium text-xs shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <>

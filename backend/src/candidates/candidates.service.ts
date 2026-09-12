@@ -398,10 +398,16 @@ export class CandidatesService {
   }
 
   // ─── START EXAM SESSION ────────────────────────────────────────────────────
-  // Fixed: EXAM_DURATION_MINS = 45, TOTAL_QUESTIONS = 60 from Shared Question Bank
   async startExamSession(candidateIdentifier: string) {
     const candidate = await this.prisma.candidate.findFirst({
-      where: { OR: [{ id: candidateIdentifier }, { referenceId: candidateIdentifier }] },
+      where: {
+        OR: [
+          { id: candidateIdentifier },
+          { referenceId: candidateIdentifier },
+          { email: { equals: candidateIdentifier, mode: 'insensitive' } },
+          { applicationId: { equals: candidateIdentifier, mode: 'insensitive' } },
+        ],
+      },
       include: {
         assessment: {
           include: {

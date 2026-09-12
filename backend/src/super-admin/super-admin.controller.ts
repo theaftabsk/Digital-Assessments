@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, Res } from '@nestjs/common';
 import { SuperAdminService } from './super-admin.service';
+import type { Response } from 'express';
 
 @Controller('api/v1/super-admin')
 export class SuperAdminController {
@@ -22,12 +23,22 @@ export class SuperAdminController {
     return this.superAdminService.getGlobalDashboard();
   }
 
+  @Get('system-health')
+  async getSystemHealth() {
+    return this.superAdminService.getSystemHealth();
+  }
+
   // --- TENANT MANAGEMENT ---
 
   @Get('tenants')
   async getAllTenants() {
     const tenants = await this.superAdminService.getAllTenants();
     return { success: true, tenants };
+  }
+
+  @Get('tenants/:id')
+  async getTenantDetails(@Param('id') tenantId: string) {
+    return this.superAdminService.getTenantDetails(tenantId);
   }
 
   @Post('tenants')
@@ -143,5 +154,23 @@ export class SuperAdminController {
     const limitNum = parseInt(limit || '50', 10);
     const result = await this.superAdminService.getCreditHistory(tenantId, pageNum, limitNum, type);
     return { success: true, ...result };
+  }
+
+  // --- DATA OPERATIONS (EXPORT & PURGE) ---
+
+  @Get('tenants/:id/export-data')
+  async exportTenantData(
+    @Param('id') tenantId: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, filename } = await this.superAdminService.exportTenantData(tenantId);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  }
+
+  @Post('tenants/:id/purge-data')
+  async purgeTenantData(@Param('id') tenantId: string) {
+    return this.superAdminService.purgeTenantData(tenantId);
   }
 }

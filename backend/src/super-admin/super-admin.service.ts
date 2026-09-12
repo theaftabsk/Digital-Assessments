@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreditsService } from '../credits/credits.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class SuperAdminService {
@@ -150,6 +151,59 @@ export class SuperAdminService {
         };
       }),
     );
+  }
+
+  /**
+   * Get single tenant deep details, metrics, top assessments, admins, and credit history
+   */
+  async getTenantDetails(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        admins: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            role: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        assessments: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            durationMins: true,
+            status: true,
+            createdAt: true,
+            _count: {
+              select: {
+                candidates: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        },
+      },
+    });
+
+    if (!tenant) throw new NotFoundException('Customer organization not found.');
+
+    const stats = await this.creditsService.getTenantStats(tenant.id);
+    const recentCreditHistory = await this.creditsService.getCreditHistory(tenant.id, 1, 50);
+
+    return {
+      success: true,
+      tenant,
+      credit: stats.credit,
+      metrics: stats.metrics,
+      admins: tenant.admins,
+      assessments: tenant.assessments,
+      recentCreditHistory: recentCreditHistory.histories || [],
+    };
   }
 
   /**
@@ -593,5 +647,238 @@ export class SuperAdminService {
         user: { username: newAdmin.username, name: newAdmin.name, role: newAdmin.role },
       };
     }
+  }
+
+  /**
+   * System & Server Health Monitor
+   */
+  async getSystemHealth() {
+    let dbStatus = 'CONNECTED';
+    let dbLatencyMs = 0;
+    try {
+      const start = Date.now();
+      await this.prisma.$queryRaw`SELECT 1`;
+      dbLatencyMs = Date.now() - start;
+    } catch {
+      dbStatus = 'DISCONNECTED';
+      dbLatencyMs = -1;
+    }
+
+    const uptimeSec = Math.floor(process.uptime());
+    const memUsage = process.memoryUsage();
+    const memUsedMb = Math.round(memUsage.heapUsed / 1024 / 1024);
+    const memTotalMb = Math.round(memUsage.heapTotal / 1024 / 1024);
+    const rssMb = Math.round(memUsage.rss / 1024 / 1024);
+
+    const activeTenantsCount = await this.prisma.tenant.count({ where: { status: 'ACTIVE' } });
+    const suspendedTenantsCount = await this.prisma.tenant.count({ where: { status: 'SUSPENDED' } });
+    const totalAssessments = await this.prisma.assessment.count();
+    const totalCandidates = await this.prisma.candidate.count({ where: { isDeleted: false } });
+    const inProgressAttempts = await this.prisma.examAttempt.count({ where: { status: 'IN_PROGRESS' } });
+    const completedAttempts = await this.prisma.examAttempt.count({ where: { status: 'COMPLETED' } });
+
+    return {
+      success: true,
+      status: dbStatus === 'CONNECTED' ? 'HEALTHY' : 'DEGRADED',
+      serverTime: new Date().toISOString(),
+      dbStatus,
+      dbLatencyMs,
+      uptimeSec,
+      memory: {
+        usedMb: memUsedMb,
+        totalMb: memTotalMb,
+        rssMb,
+      },
+      creditEngineStatus: 'OPERATIONAL',
+      counts: {
+        activeTenants: activeTenantsCount,
+        suspendedTenants: suspendedTenantsCount,
+        totalAssessments,
+        totalCandidates,
+        inProgressAttempts,
+        completedAttempts,
+      },
+    };
+  }
+
+  /**
+   * Export complete customer / tenant data as an Excel workbook
+   */
+  async exportTenantData(tenantId: string): Promise<{ buffer: ExcelJS.Buffer; filename: string }> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        admins: { select: { username: true, name: true, role: true, createdAt: true } },
+        assessments: {
+          include: {
+            candidates: {
+              where: { isDeleted: false },
+              include: {
+                attempts: { orderBy: { startedAt: 'desc' }, take: 1 },
+              },
+            },
+          },
+        },
+        creditHistories: { orderBy: { createdAt: 'desc' }, take: 200 },
+      },
+    });
+
+    if (!tenant) throw new NotFoundException('Tenant not found.');
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'GreatCampus Super Admin';
+    workbook.created = new Date();
+
+    // Sheet 1: Tenant Overview
+    const s1 = workbook.addWorksheet('Tenant Overview');
+    s1.columns = [
+      { header: 'Property', key: 'prop', width: 28 },
+      { header: 'Value', key: 'val', width: 45 },
+    ];
+    s1.addRow({ prop: 'Tenant ID', val: tenant.id });
+    s1.addRow({ prop: 'Organization Name', val: tenant.name });
+    s1.addRow({ prop: 'URL Identifier (Slug)', val: tenant.slug });
+    s1.addRow({ prop: 'Status', val: tenant.status });
+    s1.addRow({ prop: 'Total Credit Limit', val: tenant.creditLimit });
+    s1.addRow({ prop: 'Used Credits', val: tenant.usedCredit });
+    s1.addRow({ prop: 'Remaining Balance', val: Math.max(0, tenant.creditLimit - tenant.usedCredit) });
+    s1.addRow({ prop: 'Export Generated At', val: new Date().toISOString() });
+
+    // Sheet 2: Candidates & Results
+    const s2 = workbook.addWorksheet('Candidates & Results');
+    s2.columns = [
+      { header: 'S.No', key: 'sno', width: 8 },
+      { header: 'Candidate Name', key: 'name', width: 26 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Phone', key: 'phone', width: 18 },
+      { header: 'Application ID', key: 'appId', width: 22 },
+      { header: 'Assessment', key: 'assessment', width: 32 },
+      { header: 'Status', key: 'status', width: 16 },
+      { header: 'Score', key: 'score', width: 12 },
+      { header: 'Percentage', key: 'pct', width: 14 },
+      { header: 'Result', key: 'result', width: 14 },
+      { header: 'Warnings', key: 'warnings', width: 12 },
+      { header: 'Registered Date', key: 'created', width: 22 },
+    ];
+
+    let sno = 1;
+    tenant.assessments.forEach((ass) => {
+      ass.candidates.forEach((c) => {
+        const att = c.attempts?.[0];
+        s2.addRow({
+          sno: sno++,
+          name: c.name,
+          email: c.email,
+          phone: c.phone || '—',
+          appId: c.applicationId || c.referenceId || '—',
+          assessment: ass.name,
+          status: c.status,
+          score: att ? att.score : 0,
+          pct: att ? `${att.percentage}%` : '0%',
+          result: att ? (att.isPassed ? 'PASSED' : 'FAILED') : 'NOT STARTED',
+          warnings: att ? att.warningCount : 0,
+          created: c.createdAt.toISOString().split('T')[0],
+        });
+      });
+    });
+
+    // Sheet 3: Assessments
+    const s3 = workbook.addWorksheet('Assessments');
+    s3.columns = [
+      { header: 'Assessment ID', key: 'id', width: 36 },
+      { header: 'Assessment Name', key: 'name', width: 32 },
+      { header: 'Slug', key: 'slug', width: 24 },
+      { header: 'Duration (Mins)', key: 'duration', width: 16 },
+      { header: 'Passing %', key: 'passing', width: 14 },
+      { header: 'Status', key: 'status', width: 14 },
+      { header: 'Total Candidates', key: 'totalCand', width: 18 },
+    ];
+    tenant.assessments.forEach((ass) => {
+      s3.addRow({
+        id: ass.id,
+        name: ass.name,
+        slug: ass.slug,
+        duration: ass.durationMins,
+        passing: `${ass.passingPercentage}%`,
+        status: ass.status,
+        totalCand: ass.candidates.length,
+      });
+    });
+
+    // Sheet 4: Credit History
+    const s4 = workbook.addWorksheet('Credit Ledger');
+    s4.columns = [
+      { header: 'Timestamp', key: 'ts', width: 22 },
+      { header: 'Action Type', key: 'type', width: 18 },
+      { header: 'Amount', key: 'amount', width: 14 },
+      { header: 'Balance After', key: 'balance', width: 16 },
+      { header: 'Description', key: 'desc', width: 40 },
+      { header: 'Admin / Actor', key: 'admin', width: 22 },
+    ];
+    tenant.creditHistories.forEach((ch) => {
+      s4.addRow({
+        ts: ch.createdAt.toISOString(),
+        type: ch.type,
+        amount: ch.amount > 0 ? `+${ch.amount}` : `${ch.amount}`,
+        balance: ch.balanceAfter,
+        desc: ch.description,
+        admin: ch.adminName || 'System',
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const safeTenantName = tenant.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeTenantName}_Full_Archive_${Date.now()}.xlsx`;
+
+    return { buffer, filename };
+  }
+
+  /**
+   * Purge / Clean all candidate test data for a tenant while preserving tenant & admin accounts
+   */
+  async purgeTenantData(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        assessments: { select: { id: true } },
+      },
+    });
+
+    if (!tenant) throw new NotFoundException('Tenant organization not found.');
+
+    const assessmentIds = tenant.assessments.map((a) => a.id);
+
+    // Delete all candidates under this tenant's assessments
+    const deleteResult = await this.prisma.candidate.deleteMany({
+      where: {
+        assessmentId: { in: assessmentIds },
+      },
+    });
+
+    // Reset usedCredit back to 0
+    await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { usedCredit: 0 },
+    });
+
+    // Log credit adjustment record
+    await this.prisma.creditHistory.create({
+      data: {
+        tenantId: tenant.id,
+        type: 'ADJUSTMENT',
+        amount: 0,
+        balanceAfter: tenant.creditLimit,
+        description: `Super Admin purged all test candidate data (${deleteResult.count} candidates cleared)`,
+        adminName: 'Super Admin',
+      },
+    });
+
+    this.logger.warn(`Tenant [${tenant.name}] data purged by Super Admin. ${deleteResult.count} candidates deleted.`);
+
+    return {
+      success: true,
+      message: `Tenant data wiped cleanly. ${deleteResult.count} candidate records purged, used credits reset to 0.`,
+      purgedCandidatesCount: deleteResult.count,
+    };
   }
 }

@@ -159,7 +159,7 @@ function AssessmentContent({ slug }: { slug: string }) {
         if (data.questions) {
           localStorage.setItem("banca_exam_session", JSON.stringify(data));
         }
-        setShowLaunchWizard(true);
+        router.push("/exam/test");
       } else {
         // STRICT REJECTION: Display authorized error message, DO NOT BYPASS!
         setError(

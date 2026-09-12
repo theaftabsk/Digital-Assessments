@@ -13,7 +13,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
+      <head>
+        <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@900,800,700,600,500,400&display=swap" />
+      </head>
+      <body className="min-h-screen bg-white text-black antialiased selection:bg-black selection:text-white font-sans">
         {children}
       </body>
     </html>

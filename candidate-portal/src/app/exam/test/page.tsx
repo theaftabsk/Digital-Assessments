@@ -62,12 +62,42 @@ export default function CandidateTestEngine() {
     }
     const cand = JSON.parse(stored);
     setCandidate(cand);
-    initializeExamSession(cand.referenceId || cand.email || cand.id);
+
+    // Fast-hydrate from preloaded session so the exam opens instantly without waiting
+    const storedSession = localStorage.getItem("banca_exam_session");
+    if (storedSession) {
+      try {
+        const sessionData = JSON.parse(storedSession);
+        if (sessionData.attemptId && sessionData.questions?.length > 0) {
+          setAttemptId(sessionData.attemptId);
+          setAssessmentName(sessionData.assessmentName || "Assessment Test");
+          if (sessionData.tenant) {
+            setCandidate((prev: any) => ({ ...prev, tenant: sessionData.tenant }));
+          }
+          setQuestions(sessionData.questions);
+          const calculatedTime = sessionData.remainingTimeSec !== undefined ? sessionData.remainingTimeSec : (sessionData.durationMins || 45) * 60;
+          setTimeLeftSec(calculatedTime);
+          setMaxProctorWarnings(sessionData.maxProctorWarnings || 6);
+          setWarningCount(sessionData.warningCount || 0);
+
+          const initAnswers: Record<string, { selectedOption: string | null; timeTakenSec: number }> = {};
+          sessionData.questions.forEach((q: ExamQuestion) => {
+            if (q.selectedOption) {
+              initAnswers[q.id] = { selectedOption: q.selectedOption, timeTakenSec: 0 };
+            }
+          });
+          setAnswers(initAnswers);
+          setLoading(false);
+        }
+      } catch {
+        /* fallback to network load */
+      }
+    }
+
+    initializeExamSession(cand.referenceId || cand.id || cand.email);
   }, [router]);
 
   const initializeExamSession = async (identifier: string) => {
-    setLoading(true);
-    setError("");
     try {
       const baseUrl = getApiBaseUrl();
       const res = await fetch(`${baseUrl}/api/v1/candidates/start-exam`, {
@@ -97,12 +127,18 @@ export default function CandidateTestEngine() {
           }
         });
         setAnswers(initAnswers);
+        setLoading(false);
       } else {
-        setError(data.message || "Failed to initialize exam session.");
+        // Only show error if no cached session was already loaded
+        if (!localStorage.getItem("banca_exam_session")) {
+          setError(data.message || "Failed to initialize exam session.");
+        }
       }
     } catch (err: any) {
       console.error("Failed to connect to backend:", err);
-      setError("Network connection error. Please ensure the backend server is running.");
+      if (!localStorage.getItem("banca_exam_session")) {
+        setError("Network connection error. Please ensure the backend server is running.");
+      }
     } finally {
       setLoading(false);
     }

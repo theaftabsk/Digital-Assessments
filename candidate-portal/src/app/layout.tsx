@@ -39,11 +39,6 @@ export const metadata: Metadata = {
     description:
       "AI-powered role tests, automated first-round interviews, and personalized microlearning in one continuous platform.",
   },
-  icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
-  },
 };
 
 export default function RootLayout({

@@ -100,34 +100,34 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "ACTIVE":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-black text-white shadow-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
           Active
         </span>
       );
     case "UPCOMING":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-black/[0.04] text-black border border-black/[0.08]">
           <Clock size={11} />
           Upcoming
         </span>
       );
     case "EXPIRED":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-black/[0.03] text-zinc-400 border border-black/[0.06]">
           <AlertCircle size={11} />
           Expired
         </span>
       );
     case "DRAFT":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-black/[0.03] text-zinc-600 border border-black/[0.06]">
           Draft
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-black/[0.03] text-zinc-400 border border-black/[0.06]">
           Inactive
         </span>
       );
@@ -146,19 +146,22 @@ function formatDisplay(iso?: string | null) {
   return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 }
 
-function getDisplayExamLink(rawLink: string) {
-  if (!rawLink) return "";
-  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
-    let slugOrId = rawLink;
+function getDisplayExamLink(rawLink: string, slug?: string) {
+  let slugVal = slug;
+  if (!slugVal && rawLink) {
     if (rawLink.includes("assessment=")) {
-      slugOrId = rawLink.split("assessment=")[1];
-    } else if (rawLink.includes("/")) {
-      const parts = rawLink.split("/");
-      slugOrId = parts[parts.length - 1];
+      slugVal = rawLink.split("assessment=")[1];
+    } else {
+      const parts = rawLink.split("/").filter(Boolean);
+      slugVal = parts[parts.length - 1];
     }
-    return `http://localhost:3000/${slugOrId}`;
   }
-  return rawLink;
+  slugVal = slugVal || "";
+
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return `http://localhost:3000/${slugVal}`;
+  }
+  return `https://assessment.greatcampus.tech/${slugVal}`;
 }
 
 export default function AdminAssessmentsPage() {
@@ -273,7 +276,7 @@ export default function AdminAssessmentsPage() {
   }, [loadSessions]);
 
   const copyLink = (session: AssessmentSession) => {
-    const linkToCopy = getDisplayExamLink(session.uniqueCandidateLink);
+    const linkToCopy = getDisplayExamLink(session.uniqueCandidateLink, session.slug);
     navigator.clipboard.writeText(linkToCopy).then(() => {
       setCopiedId(session.id);
       addToast("info", "Candidate exam link copied to clipboard.", "Link Copied");
@@ -455,107 +458,13 @@ export default function AdminAssessmentsPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* ── 1. Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-600">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Exams & Assessment Sessions
-              </h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {userRole === "VENDOR"
-                  ? "View and access assessment sessions assigned to your agency"
-                  : "Configure unique candidate exam links with scheduled access windows"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={loadSessions}
-            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition flex items-center gap-2 cursor-pointer"
-            title="Refresh Sessions List"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin text-blue-600" : ""} />
-            <span>Refresh</span>
-          </button>
-
-          {userRole !== "VENDOR" && (
-            <button
-              onClick={openCreate}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Plus size={16} />
-              <span>New Assessment Session</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── 2. Top Metric Cards (Responsive Grid) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Sessions */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Sessions</span>
-            <div className="text-2xl font-black text-slate-900 font-mono">{sessions.length}</div>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Layers className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Active Windows */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Windows</span>
-            <div className="text-2xl font-black text-emerald-600 font-mono flex items-center gap-2">
-              <span>{activeSessionsCount}</span>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Live
-              </span>
-            </div>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <Activity className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Enrolled Candidates */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Enrolled</span>
-            <div className="text-2xl font-black text-slate-900 font-mono">{totalEnrolledCandidates}</div>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Users className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Exam Engine Constant */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Exam Engine</span>
-            <div className="text-sm font-extrabold text-white">60 Qs • 45 Mins</div>
-            <div className="text-[10px] text-blue-300 font-medium">Shared Question Bank</div>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-white/10 text-amber-400 flex items-center justify-center">
-            <Zap className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* ── 3. Search & Filter Bar ── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1">
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* ── 1. Apple Liquid Glass Toolbar (No Duplicate In-Page Header) ── */}
+      <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-4 sm:p-5 border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] flex flex-wrap items-center justify-between gap-4">
+        {/* Search & Status Filters */}
+        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+          {/* Search Box */}
+          <div className="relative w-full sm:w-80">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               placeholder="Search assessment, slug, vendor..."
@@ -564,20 +473,20 @@ export default function AdminAssessmentsPage() {
                 setSearchQuery(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+              className="w-full pl-9 pr-3.5 py-2 bg-black/[0.03] rounded-2xl border border-black/[0.06] text-xs font-semibold text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition"
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-            <Filter size={12} className="text-slate-500" />
+          {/* Status Filter Dropdown */}
+          <div className="flex items-center gap-1.5 bg-black/[0.03] border border-black/[0.06] rounded-2xl px-3 py-1.5">
+            <Filter size={12} className="text-zinc-500" />
             <select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="bg-transparent border-none text-xs font-bold text-slate-700 outline-none cursor-pointer"
+              className="bg-transparent border-none text-xs font-bold text-black outline-none cursor-pointer"
             >
               <option value="ALL">All Statuses ({sessions.length})</option>
               <option value="ACTIVE">Active</option>
@@ -589,10 +498,10 @@ export default function AdminAssessmentsPage() {
           </div>
         </div>
 
-        {/* Page Size Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500">Show:</span>
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Page Size Selector */}
+          <div className="hidden sm:flex items-center gap-1 bg-black/[0.03] border border-black/[0.06] p-1 rounded-2xl">
             {[25, 50, 100].map((size) => (
               <button
                 key={size}
@@ -600,30 +509,114 @@ export default function AdminAssessmentsPage() {
                   setPageSize(size);
                   setPage(1);
                 }}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  pageSize === size ? "bg-white text-blue-600 shadow-2xs" : "text-slate-600 hover:bg-slate-200"
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-xl transition cursor-pointer ${
+                  pageSize === size ? "bg-black text-white shadow-xs" : "text-zinc-600 hover:text-black"
                 }`}
               >
                 {size}
               </button>
             ))}
           </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={loadSessions}
+            className="p-2.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.06] text-black text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            title="Refresh Sessions List"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin text-black" : ""} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+
+          {/* New Assessment Session Button */}
+          {userRole !== "VENDOR" && (
+            <button
+              onClick={openCreate}
+              className="px-4 py-2.5 rounded-2xl bg-black hover:bg-black/85 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer"
+            >
+              <Plus size={15} />
+              <span>New Assessment Session</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── 4. Main Assessments Content (Responsive Table / Cards) ── */}
+      {/* ── 2. Top Metric Cards (Apple Monochrome) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Total Sessions */}
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Total Sessions</span>
+            <div className="text-3xl font-black text-black tracking-tight">{sessions.length}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Configured Exams</span>
+            </div>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-black/[0.04] border border-black/[0.06] text-black flex items-center justify-center shrink-0">
+            <Layers className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Active Windows */}
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Active Windows</span>
+            <div className="text-3xl font-black text-black tracking-tight">{activeSessionsCount}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Live Exam Access</span>
+            </div>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-black/[0.04] border border-black/[0.06] text-black flex items-center justify-center shrink-0">
+            <Activity className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Enrolled Candidates */}
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Total Enrolled</span>
+            <div className="text-3xl font-black text-black tracking-tight">{totalEnrolledCandidates}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Candidates Across Tests</span>
+            </div>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-black/[0.04] border border-black/[0.06] text-black flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Exam Engine Constant */}
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Exam Engine</span>
+            <div className="text-sm font-black text-black tracking-tight">60 Qs • 45 Mins</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Shared Question Bank</span>
+            </div>
+          </div>
+          <div className="w-11 h-11 rounded-2xl bg-black/[0.04] border border-black/[0.06] text-black flex items-center justify-center shrink-0">
+            <Zap className="w-5 h-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. Main Assessments Content (Apple Liquid Glass Table) ── */}
       {loading ? (
-        <div className="py-20 text-center bg-white rounded-2xl border border-slate-200">
-          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs font-bold text-slate-600">Loading assessment sessions...</p>
+        <div className="py-24 text-center bg-white/80 backdrop-blur-2xl rounded-3xl border border-black/[0.05]">
+          <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-xs font-bold text-zinc-500 tracking-tight">Loading assessment sessions...</p>
         </div>
       ) : filteredSessions.length === 0 ? (
-        <div className="py-20 text-center bg-white rounded-2xl border border-slate-200 space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+        <div className="py-20 text-center bg-white/80 backdrop-blur-2xl rounded-3xl border border-black/[0.05] space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-black/[0.04] text-black flex items-center justify-center mx-auto">
             <BookOpen size={24} />
           </div>
-          <h3 className="text-sm font-black text-slate-900">No Assessment Sessions Found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
+          <h3 className="text-sm font-black text-black tracking-tight">No Assessment Sessions Found</h3>
+          <p className="text-xs text-zinc-500 max-w-sm mx-auto font-medium tracking-tight">
             {userRole === "VENDOR"
               ? "No assessments assigned to your vendor account yet. Please contact HR Administrator."
               : "No assessment sessions match your search or filter criteria."}
@@ -631,31 +624,31 @@ export default function AdminAssessmentsPage() {
           {userRole !== "VENDOR" && sessions.length === 0 && (
             <button
               onClick={openCreate}
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold inline-flex items-center gap-2 hover:bg-blue-700 transition"
+              className="px-4 py-2 rounded-2xl bg-black text-white text-xs font-bold inline-flex items-center gap-2 hover:bg-black/85 transition"
             >
               <Plus size={15} /> Create First Session
             </button>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider text-[11px]">
+              <thead className="bg-black/[0.02] border-b border-black/[0.06] text-zinc-500 font-bold uppercase tracking-wider text-[11px]">
                 <tr>
-                  <th className="py-3.5 px-4 w-[32%] min-w-[220px]">Session Details & Creator</th>
-                  <th className="py-3.5 px-3 w-[10%] min-w-[90px] text-center">Status</th>
-                  <th className="py-3.5 px-3 w-[16%] min-w-[130px]">Configuration</th>
-                  <th className="py-3.5 px-3 w-[18%] min-w-[150px]">Schedule Window</th>
-                  <th className="py-3.5 px-3 w-[16%] min-w-[140px]">Unique Candidate Link</th>
-                  <th className="py-3.5 px-4 w-[8%] min-w-[100px] text-right">Actions</th>
+                  <th className="py-4 px-5 w-[30%] min-w-[220px]">Session Details & Creator</th>
+                  <th className="py-4 px-3 w-[12%] min-w-[100px] text-center">Status</th>
+                  <th className="py-4 px-3 w-[18%] min-w-[150px]">Configuration</th>
+                  <th className="py-4 px-3 w-[18%] min-w-[150px]">Schedule Window</th>
+                  <th className="py-4 px-3 w-[14%] min-w-[140px]">Unique Candidate Link</th>
+                  <th className="py-4 px-5 w-[8%] min-w-[110px] text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-black/[0.04]">
                 {paginatedSessions.map((session) => {
                   const computedStatus = getComputedStatus(session);
                   const isCopied = copiedId === session.id;
-                  const displayLink = getDisplayExamLink(session.uniqueCandidateLink);
+                  const displayLink = getDisplayExamLink(session.uniqueCandidateLink, session.slug);
 
                   // Determine Creator Origin
                   const isApiCreated = session.vendorAssignments?.[0]?.assignedBy?.startsWith("API:");
@@ -663,92 +656,92 @@ export default function AdminAssessmentsPage() {
                   const vendorCode = session.vendorAssignments?.[0]?.vendorCode || session.assignedVendors?.[0]?.vendorCode;
 
                   return (
-                    <tr key={session.id} className="hover:bg-blue-50/20 transition-colors group">
+                    <tr key={session.id} className="hover:bg-black/[0.015] transition-colors group">
                       {/* Col 1: Session Name & Creator */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-5">
                         <Link
                           href={`/admin/assessments/${session.id}`}
-                          className="inline-flex items-center gap-1.5 font-extrabold text-slate-900 hover:text-blue-600 transition group-hover:underline"
+                          className="inline-flex items-center gap-1.5 font-black text-black hover:opacity-75 transition group-hover:underline"
                         >
-                          <span className="text-xs sm:text-sm font-bold tracking-tight">{session.name}</span>
-                          <ExternalLink size={12} className="text-blue-500 opacity-80 shrink-0" />
+                          <span className="text-sm font-black tracking-tight">{session.name}</span>
+                          <ExternalLink size={12} className="text-black/50 opacity-80 shrink-0" />
                         </Link>
 
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                           {isApiCreated ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/[0.04] text-black border border-black/[0.06]">
                               <Terminal size={10} /> API: {vendorName || vendorCode || "Vendor"}
                             </span>
                           ) : vendorName ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/[0.04] text-black border border-black/[0.06]">
                               <Building2 size={10} /> Vendor: {vendorName}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/[0.04] text-black border border-black/[0.06]">
                               <ShieldCheck size={10} /> Super Admin
                             </span>
                           )}
 
-                          <span className="text-[10px] text-slate-400 font-medium">
+                          <span className="text-[10px] text-zinc-400 font-medium">
                             • Created {new Date(session.createdAt).toLocaleDateString()}
                           </span>
                         </div>
 
                         {session.description && (
-                          <p className="text-[11px] text-slate-500 line-clamp-1 mt-1 font-normal">
+                          <p className="text-[11px] text-zinc-500 line-clamp-1 mt-1 font-normal tracking-tight">
                             {session.description}
                           </p>
                         )}
                       </td>
 
                       {/* Col 2: Status */}
-                      <td className="py-3.5 px-3 text-center">
+                      <td className="py-4 px-3 text-center">
                         <StatusBadge status={computedStatus} />
                       </td>
 
-                      {/* Col 3: Configuration & Controls */}
-                      <td className="py-3.5 px-3">
+                      {/* Col 3: Configuration & Controls (Monochrome) */}
+                      <td className="py-4 px-3">
                         <div className="flex flex-col gap-1.5">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.03] text-black text-[10px] font-bold border border-black/[0.06]">
                               <BookOpen size={10} /> {session.totalQuestions || session.questionBank?.questionCount || TOTAL_QUESTIONS} Qs
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.03] text-black text-[10px] font-bold border border-black/[0.06]">
                               <Clock size={10} /> {session.durationMins || EXAM_DURATION_MINS} Mins
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.03] text-black text-[10px] font-bold border border-black/[0.06]">
                               Pass {session.passingPercentage || 50}%
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-[10px] font-extrabold border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.03] text-black text-[10px] font-bold border border-black/[0.06]">
                               {session.maxProctorWarnings || 6} Warns
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.03] text-black text-[10px] font-bold border border-black/[0.06]">
                               <Users size={10} /> {session.totalCandidates} Users
                             </span>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-1">
                             {session.enableCamera !== false && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] text-zinc-700 font-semibold" title="Camera Monitoring Enabled">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] text-zinc-700 font-semibold" title="Camera Monitoring Enabled">
                                 📷 Cam
                               </span>
                             )}
                             {session.enableTabSwitch !== false && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] text-zinc-700 font-semibold" title="Tab Switch Detection Enabled">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] text-zinc-700 font-semibold" title="Tab Switch Detection Enabled">
                                 🔀 Tab
                               </span>
                             )}
                             {session.enableFullscreen !== false && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] text-zinc-700 font-semibold" title="Fullscreen Enforced">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] text-zinc-700 font-semibold" title="Fullscreen Enforced">
                                 ⛶ Fullscreen
                               </span>
                             )}
                             {session.questionBankName ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/[0.04] text-black text-[10px] font-bold border border-black/10">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/[0.04] text-black text-[10px] font-bold border border-black/10">
                                 <Layers size={10} /> {session.questionBankName}
                               </span>
                             ) : (
-                              <span className="text-[10px] text-slate-400 font-medium">
+                              <span className="text-[10px] text-zinc-400 font-medium">
                                 Default Bank
                               </span>
                             )}
@@ -757,48 +750,44 @@ export default function AdminAssessmentsPage() {
                       </td>
 
                       {/* Col 4: Schedule Window */}
-                      <td className="py-3.5 px-3 text-slate-600 font-medium text-[11px]">
-                        <div className="space-y-0.5">
+                      <td className="py-4 px-3 text-zinc-600 font-medium text-[11px]">
+                        <div className="space-y-1">
                           <div className="flex items-center gap-1 text-[11px]">
-                            <span className="text-slate-400 text-[10px] font-bold">From:</span>
-                            <span className="font-semibold text-slate-700">{formatDisplay(session.activeFrom)}</span>
+                            <span className="text-zinc-400 text-[10px] font-bold">From:</span>
+                            <span className="font-semibold text-black tracking-tight">{formatDisplay(session.activeFrom)}</span>
                           </div>
                           <div className="flex items-center gap-1 text-[11px]">
-                            <span className="text-slate-400 text-[10px] font-bold">Until:</span>
-                            <span className="font-semibold text-slate-700">{formatDisplay(session.activeUntil)}</span>
+                            <span className="text-zinc-400 text-[10px] font-bold">Until:</span>
+                            <span className="font-semibold text-black tracking-tight">{formatDisplay(session.activeUntil)}</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Col 5: Unique Candidate Link */}
-                      <td className="py-3.5 px-3">
+                      <td className="py-4 px-3">
                         <div className="flex items-center gap-1.5 max-w-[200px]">
                           <input
                             readOnly
                             value={displayLink}
                             title={displayLink}
-                            className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-mono text-slate-600 truncate focus:outline-none select-all"
+                            className="w-full px-2.5 py-1.5 bg-black/[0.03] border border-black/[0.06] rounded-xl text-[10px] font-mono text-zinc-700 truncate focus:outline-none select-all"
                           />
                           <button
                             onClick={() => copyLink(session)}
-                            className={`p-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 shrink-0 cursor-pointer ${
-                              isCopied
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100"
-                            }`}
+                            className="p-1.5 rounded-xl border border-black/[0.06] bg-white hover:bg-black/[0.04] text-black text-xs font-bold transition flex items-center shrink-0 cursor-pointer"
                             title="Copy Candidate Link"
                           >
-                            {isCopied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+                            {isCopied ? <CheckCircle2 size={13} className="text-black" /> : <Copy size={13} />}
                           </button>
                         </div>
                       </td>
 
-                      {/* Col 6: Actions */}
-                      <td className="py-3.5 px-4 text-right">
+                      {/* Col 6: Actions (Monochrome) */}
+                      <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
                             href={`/admin/assessments/${session.id}`}
-                            className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+                            className="p-2 rounded-xl text-zinc-600 hover:text-black hover:bg-black/[0.05] border border-black/[0.06] bg-white transition cursor-pointer"
                             title="Open Assessment Dashboard"
                           >
                             <ExternalLink size={13} />
@@ -808,7 +797,7 @@ export default function AdminAssessmentsPage() {
                             <>
                               <button
                                 onClick={() => openEdit(session)}
-                                className="p-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+                                className="p-2 rounded-xl text-zinc-600 hover:text-black hover:bg-black/[0.05] border border-black/[0.06] bg-white transition cursor-pointer"
                                 title="Edit Session"
                               >
                                 <Edit2 size={13} />
@@ -817,11 +806,7 @@ export default function AdminAssessmentsPage() {
                               {computedStatus !== "EXPIRED" && (
                                 <button
                                   onClick={() => handleToggleStatus(session)}
-                                  className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                                    session.status === "ACTIVE"
-                                      ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                                      : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                  }`}
+                                  className="p-2 rounded-xl text-zinc-600 hover:text-black hover:bg-black/[0.05] border border-black/[0.06] bg-white transition cursor-pointer"
                                   title={session.status === "ACTIVE" ? "Deactivate" : "Activate"}
                                 >
                                   {session.status === "ACTIVE" ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -830,7 +815,7 @@ export default function AdminAssessmentsPage() {
 
                               <button
                                 onClick={() => setDeleteTarget(session)}
-                                className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                                className="p-2 rounded-xl text-zinc-400 hover:text-red-600 hover:bg-red-50 border border-black/[0.06] bg-white transition cursor-pointer"
                                 title="Delete Session"
                               >
                                 <Trash2 size={13} />
@@ -848,8 +833,8 @@ export default function AdminAssessmentsPage() {
 
           {/* Pagination Footer */}
           {filteredSessions.length > 0 && (
-            <div className="p-3.5 border-t border-slate-200 flex items-center justify-between bg-slate-50/70">
-              <span className="text-xs text-slate-500 font-semibold">
+            <div className="p-4 border-t border-black/[0.06] flex items-center justify-between bg-black/[0.01]">
+              <span className="text-xs text-zinc-500 font-semibold tracking-tight">
                 Showing {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filteredSessions.length)} of{" "}
                 {filteredSessions.length} sessions
               </span>
@@ -857,17 +842,17 @@ export default function AdminAssessmentsPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl border border-black/[0.06] bg-white hover:bg-black/[0.04] text-black disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={14} />
                 </button>
-                <span className="px-3 py-1 text-xs font-bold text-slate-700">
+                <span className="px-3 py-1 text-xs font-bold text-black tracking-tight">
                   Page {page} of {totalPages}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl border border-black/[0.06] bg-white hover:bg-black/[0.04] text-black disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={14} />
                 </button>

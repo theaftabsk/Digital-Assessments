@@ -19,6 +19,7 @@ model Tenant {
   status          String          @default("ACTIVE") // ACTIVE, SUSPENDED
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  questionBanks   QuestionBank[]
   assessments     Assessment[]
   admins          Admin[]
   creditHistories CreditHistory[]
@@ -69,12 +70,28 @@ model VendorAssessment {
   @@unique([vendorId, assessmentId])
 }
 
-// Assessment = a single exam session. Each session has a unique link and an active time window.
-// The exam itself is always: 60 Questions + 45 Minutes.
+// Question Bank — Container for organizing sets of questions (e.g. Banca Assurance, Sales Aptitude, Tech)
+model QuestionBank {
+  id          String       @id @default(uuid())
+  tenantId    String       @default("default-tenant")
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  category    String?      @default("General")
+  status      String       @default("ACTIVE") // ACTIVE, ARCHIVED
+  questions   Question[]
+  assessments Assessment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Assessment = a single exam session. Can link to a specific QuestionBank or default pool.
 model Assessment {
   id                 String             @id @default(uuid())
   tenantId           String
   tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  questionBankId     String?
+  questionBank       QuestionBank?      @relation(fields: [questionBankId], references: [id], onDelete: SetNull)
   name               String
   slug               String             @unique
   description        String?
@@ -93,9 +110,11 @@ model Assessment {
   updatedAt          DateTime           @updatedAt
 }
 
-// Shared Question Bank — 60 fixed questions used across ALL assessments.
+// Question model — can belong to a specific QuestionBank or shared pool.
 model Question {
   id               String            @id @default(uuid())
+  questionBankId   String?
+  questionBank     QuestionBank?     @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
   question         String
   optionA          String
   optionB          String

@@ -6,13 +6,250 @@ export class QuestionsService {
   constructor(private prisma: PrismaService) {}
 
   // Get all questions from the shared question bank
-  async getQuestions() {
+  async getQuestions(bankId?: string) {
     return this.prisma.question.findMany({
+      where: bankId ? { questionBankId: bankId } : undefined,
       orderBy: { createdAt: 'asc' },
     });
   }
 
+  // -------------------------------------------------------------
+  // QUESTION BANK MANAGEMENT
+  // -------------------------------------------------------------
+  async getQuestionBanks(tenantId?: string) {
+    let banks = await this.prisma.questionBank.findMany({
+      where: tenantId ? { OR: [{ tenantId }, { tenantId: 'default-tenant' }] } : undefined,
+      include: {
+        _count: { select: { questions: true, assessments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // If no bank exists yet, auto-create an initial default bank and assign existing questions
+    if (banks.length === 0) {
+      const defaultBank = await this.prisma.questionBank.create({
+        data: {
+          tenantId: tenantId || 'default-tenant',
+          name: 'Official Banca & Assessment Question Bank',
+          description: 'Official shared pool of 60 standard questions for candidate assessment',
+          category: 'Banking & Financial',
+          status: 'ACTIVE',
+        },
+      });
+
+      // Link any questions that don't have a questionBankId to this default bank
+      await this.prisma.question.updateMany({
+        where: { questionBankId: null },
+        data: { questionBankId: defaultBank.id },
+      });
+
+      banks = await this.prisma.questionBank.findMany({
+        where: tenantId ? { OR: [{ tenantId }, { tenantId: 'default-tenant' }] } : undefined,
+        include: {
+          _count: { select: { questions: true, assessments: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    // Calculate total marks for each bank
+    const banksWithStats = await Promise.all(
+      banks.map(async (b) => {
+        const aggregate = await this.prisma.question.aggregate({
+          where: { questionBankId: b.id },
+          _sum: { marks: true },
+        });
+        return {
+          id: b.id,
+          name: b.name,
+          description: b.description,
+          category: b.category,
+          status: b.status,
+          tenantId: b.tenantId,
+          createdAt: b.createdAt,
+          updatedAt: b.updatedAt,
+          questionCount: b._count.questions,
+          assessmentsCount: b._count.assessments,
+          totalMarks: aggregate._sum.marks || b._count.questions,
+        };
+      }),
+    );
+
+    return banksWithStats;
+  }
+
+  async getQuestionBankById(id: string) {
+    const bank = await this.prisma.questionBank.findUnique({
+      where: { id },
+      include: {
+        questions: {
+          orderBy: { createdAt: 'asc' },
+        },
+        _count: { select: { questions: true, assessments: true } },
+      },
+    });
+
+    if (!bank) return null;
+
+    const totalMarks = bank.questions.reduce((sum, q) => sum + (q.marks || 1), 0);
+
+    return {
+      ...bank,
+      questionCount: bank.questions.length,
+      totalMarks,
+    };
+  }
+
+  async createQuestionBank(data: {
+    name: string;
+    description?: string;
+    category?: string;
+    tenantId?: string;
+  }) {
+    return this.prisma.questionBank.create({
+      data: {
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        category: data.category?.trim() || 'General',
+        tenantId: data.tenantId || 'default-tenant',
+        status: 'ACTIVE',
+      },
+    });
+  }
+
+  async updateQuestionBank(
+    id: string,
+    data: { name?: string; description?: string; category?: string; status?: string }
+  ) {
+    return this.prisma.questionBank.update({
+      where: { id },
+      data: {
+        ...(data.name && { name: data.name.trim() }),
+        ...(data.description !== undefined && { description: data.description?.trim() || null }),
+        ...(data.category && { category: data.category.trim() }),
+        ...(data.status && { status: data.status }),
+      },
+    });
+  }
+
+  async deleteQuestionBank(id: string) {
+    return this.prisma.questionBank.delete({
+      where: { id },
+    });
+  }
+
+  async addQuestionToBank(
+    bankId: string,
+    data: {
+      question: string;
+      optionA: string;
+      optionB: string;
+      optionC: string;
+      optionD: string;
+      correctAnswer: string;
+      marks?: number;
+      sectionName?: string;
+    },
+  ) {
+    return this.prisma.question.create({
+      data: {
+        questionBankId: bankId,
+        question: data.question.trim(),
+        optionA: data.optionA.trim(),
+        optionB: data.optionB.trim(),
+        optionC: data.optionC.trim(),
+        optionD: data.optionD.trim(),
+        correctAnswer: data.correctAnswer.trim().toUpperCase(),
+        marks: data.marks !== undefined ? Number(data.marks) : 1.0,
+        sectionName: data.sectionName?.trim() || 'General',
+        status: 'ACTIVE',
+      },
+    });
+  }
+
+  async importQuestionsToBank(bankId: string, rows: Array<any>) {
+    const validRows: any[] = [];
+    const errors: Array<{ row: number; error: string }> = [];
+
+    rows.forEach((row, idx) => {
+      const rowNum = idx + 1;
+      const questionText = row.question || row.Question || row['Question Text'];
+      const optA = row.optionA || row.OptionA || row['Option A'] || row['A'];
+      const optB = row.optionB || row.OptionB || row['Option B'] || row['B'];
+      const optC = row.optionC || row.OptionC || row['Option C'] || row['C'];
+      const optD = row.optionD || row.OptionD || row['Option D'] || row['D'];
+      const correct = String(
+        row.correctAnswer || row.CorrectAnswer || row['Correct Answer'] || row.answer || row.Answer || 'A',
+      )
+        .trim()
+        .toUpperCase();
+      const marksVal =
+        row.marks !== undefined
+          ? Number(row.marks)
+          : row.Marks !== undefined
+            ? Number(row.Marks)
+            : 1;
+      const section =
+        row.sectionName || row.SectionName || row['Section Name'] || row.section || 'General';
+
+      if (!questionText || String(questionText).trim() === '') {
+        errors.push({ row: rowNum, error: 'Question text is missing.' });
+        return;
+      }
+      if (!optA || !optB || !optC || !optD) {
+        errors.push({ row: rowNum, error: 'All 4 options (A, B, C, D) are required.' });
+        return;
+      }
+      if (!['A', 'B', 'C', 'D'].includes(correct)) {
+        errors.push({
+          row: rowNum,
+          error: `Invalid correct answer "${correct}". Must be A, B, C, or D.`,
+        });
+        return;
+      }
+
+      validRows.push({
+        questionBankId: bankId,
+        question: String(questionText).trim(),
+        optionA: String(optA).trim(),
+        optionB: String(optB).trim(),
+        optionC: String(optC).trim(),
+        optionD: String(optD).trim(),
+        correctAnswer: correct,
+        marks: isNaN(marksVal) || marksVal <= 0 ? 1.0 : marksVal,
+        sectionName: String(section).trim() || 'General',
+        status: 'ACTIVE',
+      });
+    });
+
+    if (validRows.length > 0) {
+      await this.prisma.question.createMany({
+        data: validRows,
+      });
+    }
+
+    return {
+      success: true,
+      importedCount: validRows.length,
+      failedCount: errors.length,
+      errors,
+    };
+  }
+
+  getSampleCsvTemplate(): string {
+    const header = 'question,optionA,optionB,optionC,optionD,correctAnswer,marks,sectionName\n';
+    const sampleRows = [
+      `"A customer asks: Will this policy definitely pay for my father's treatment? You have not examined terms. What is best?","It should be covered if active","Most treatments are covered","Yes, provided premium paid","Let's check the applicable terms before I answer",D,1,"Communication & Customer Handling"`,
+      `"Choose the grammatically correct sentence.","Had the RM verified the information, the misunderstanding might have been avoided.","Had the RM verified the information, the misunderstanding will be avoided.","If the RM had verified the information, the misunderstanding is avoided.","If the RM verified the information, the misunderstanding might had been avoided.",A,1,"Advanced English & Comprehension"`,
+      `"If BANK is coded as CBOL and CREDIT as DSFEJU, then LOAN becomes:","MPBO","MPAO","LPBO","MQBO",A,1,"Mental Ability & Reasoning"`,
+      `"Why is accurate disclosure of health information important when applying for insurance?","It guarantees immediate approval","It eliminates underwriting","It ensures premium never changes","It helps the insurer assess the proposal appropriately",D,1,"Banking & Financial Awareness"`,
+      `"You missed your business target for two consecutive months. What should you review first?","Your activity, conversion and follow-up patterns","Whether the market has become more competitive","Whether your monthly target is realistic","Whether customers prefer another insurer",A,1,"Sales Orientation"`,
+    ].join('\n');
+    return header + sampleRows;
+  }
+
   async addQuestion(data: {
+    questionBankId?: string;
     question: string;
     optionA: string;
     optionB: string;
@@ -20,9 +257,11 @@ export class QuestionsService {
     optionD: string;
     correctAnswer: string;
     marks?: number;
+    sectionName?: string;
   }) {
     return this.prisma.question.create({
       data: {
+        questionBankId: data.questionBankId || null,
         question: data.question,
         optionA: data.optionA,
         optionB: data.optionB,
@@ -30,6 +269,7 @@ export class QuestionsService {
         optionD: data.optionD,
         correctAnswer: data.correctAnswer,
         marks: data.marks ?? 1,
+        sectionName: data.sectionName || 'General',
       } as any,
     });
   }
@@ -37,6 +277,7 @@ export class QuestionsService {
   async updateQuestion(
     id: string,
     data: {
+      questionBankId?: string;
       question?: string;
       optionA?: string;
       optionB?: string;
@@ -44,6 +285,7 @@ export class QuestionsService {
       optionD?: string;
       correctAnswer?: string;
       marks?: number;
+      sectionName?: string;
       status?: string;
     }
   ) {

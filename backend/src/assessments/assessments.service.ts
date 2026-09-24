@@ -53,6 +53,14 @@ export class AssessmentsService {
       where: whereClause,
       include: {
         _count: { select: { candidates: true } },
+        questionBank: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            _count: { select: { questions: true } },
+          },
+        },
         vendorAssignments: {
           include: {
             vendor: {
@@ -81,6 +89,8 @@ export class AssessmentsService {
         }
       }
 
+      const qBank = (ass as any).questionBank;
+
       return {
         id: ass.id,
         name: ass.name,
@@ -95,7 +105,15 @@ export class AssessmentsService {
         createdAt: ass.createdAt,
         totalCandidates: ass._count.candidates,
         durationMins: ass.durationMins || EXAM_DURATION_MINS,
-        totalQuestions: TOTAL_QUESTIONS,
+        totalQuestions: qBank?._count?.questions || TOTAL_QUESTIONS,
+        questionBankId: ass.questionBankId,
+        questionBankName: qBank?.name || null,
+        questionBank: qBank ? {
+          id: qBank.id,
+          name: qBank.name,
+          category: qBank.category,
+          questionCount: qBank._count?.questions || 0,
+        } : null,
         vendorAssignments: ass.vendorAssignments.map((va) => ({
           vendorId: va.vendor?.id,
           vendorName: va.vendor?.name,
@@ -163,6 +181,7 @@ export class AssessmentsService {
       name: string;
       slug?: string;
       description?: string;
+      questionBankId?: string;
       durationMins?: number;
       activeFrom?: string;
       activeUntil?: string;
@@ -219,7 +238,8 @@ export class AssessmentsService {
       name: data.name,
       slug,
       description: data.description || '',
-      durationMins: 45,
+      questionBankId: data.questionBankId !== undefined ? (data.questionBankId || null) : undefined,
+      durationMins: data.durationMins !== undefined ? Number(data.durationMins) : 45,
       passingPercentage: data.passingPercentage !== undefined ? Number(data.passingPercentage) : 50,
       maxProctorWarnings: data.maxProctorWarnings !== undefined ? Number(data.maxProctorWarnings) : 6,
       status: data.status || 'ACTIVE',

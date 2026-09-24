@@ -520,12 +520,26 @@ export class CandidatesService {
       },
     });
 
-    // Fetch all active questions from the Shared Question Bank
-    const allQuestions = await this.prisma.question.findMany({
-      where: { status: 'ACTIVE' },
-      orderBy: { createdAt: 'asc' },
-      take: TOTAL_QUESTIONS,
-    });
+    // Fetch questions: If assessment is linked to a Question Bank, fetch from that bank
+    let allQuestions: any[] = [];
+    if (candidate.assessment?.questionBankId) {
+      allQuestions = await this.prisma.question.findMany({
+        where: {
+          questionBankId: candidate.assessment.questionBankId,
+          status: 'ACTIVE',
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+
+    // Fallback to general shared active questions if no specific bank or bank has no questions
+    if (allQuestions.length === 0) {
+      allQuestions = await this.prisma.question.findMany({
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+        take: TOTAL_QUESTIONS,
+      });
+    }
 
     if (allQuestions.length === 0) {
       throw new BadRequestException('No active questions found in the question bank. Please contact the administrator.');

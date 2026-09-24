@@ -5,4 +5,7 @@ dist/
 .env
 .DS_Store
 banca_source.tar.gz
+update.tar.gz
+*.tar.gz
 scripts/node_modules/
+

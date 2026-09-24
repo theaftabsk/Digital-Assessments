@@ -45,6 +45,7 @@ export class AssessmentsController {
       name: string;
       slug?: string;
       description?: string;
+      questionBankId?: string;
       durationMins?: number;
       activeFrom?: string;
       activeUntil?: string;
@@ -71,6 +72,7 @@ export class AssessmentsController {
       name: string;
       slug?: string;
       description?: string;
+      questionBankId?: string;
       durationMins?: number;
       activeFrom?: string;
       activeUntil?: string;
@@ -96,6 +98,7 @@ export class AssessmentsController {
     body: {
       name?: string;
       description?: string;
+      questionBankId?: string;
       durationMins?: number;
       activeFrom?: string;
       activeUntil?: string;

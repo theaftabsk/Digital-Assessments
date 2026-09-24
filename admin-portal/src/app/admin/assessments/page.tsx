@@ -35,6 +35,14 @@ import ConfirmModal from "@/components/ConfirmModal";
 import ToastContainer, { ToastMessage } from "@/components/Toast";
 import { getApiBaseUrl } from "@/lib/config";
 
+interface QuestionBankSummary {
+  id: string;
+  name: string;
+  category?: string;
+  questionCount: number;
+  totalMarks: number;
+}
+
 interface AssessmentSession {
   id: string;
   name: string;
@@ -49,6 +57,14 @@ interface AssessmentSession {
   passingPercentage: number;
   maxProctorWarnings: number;
   uniqueCandidateLink: string;
+  questionBankId?: string;
+  questionBankName?: string;
+  questionBank?: {
+    id: string;
+    name: string;
+    category?: string;
+    questionCount: number;
+  };
   vendorAssignments?: Array<{
     vendorId?: string;
     vendorName?: string;
@@ -170,6 +186,7 @@ export default function AdminAssessmentsPage() {
   const emptyForm = {
     name: "",
     description: "",
+    questionBankId: "",
     durationMins: 45,
     activeFrom: "",
     activeUntil: "",
@@ -178,6 +195,7 @@ export default function AdminAssessmentsPage() {
     status: "ACTIVE",
   };
   const [form, setForm] = useState({ ...emptyForm });
+  const [questionBanks, setQuestionBanks] = useState<QuestionBankSummary[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -209,6 +227,17 @@ export default function AdminAssessmentsPage() {
       const res = await fetch(`${getApiBaseUrl()}/api/v1/assessments${queryStr}`, { headers });
       const data = await res.json();
       if (data.success) setSessions(data.assessments || []);
+
+      // Load available question banks
+      try {
+        const qbRes = await fetch(`${getApiBaseUrl()}/api/v1/questions/banks`, { headers });
+        const qbData = await qbRes.json();
+        if (qbData.success && Array.isArray(qbData.banks)) {
+          setQuestionBanks(qbData.banks);
+        }
+      } catch (e) {
+        console.error("Failed to load question banks:", e);
+      }
     } catch {
       /* silent */
     } finally {
@@ -240,6 +269,7 @@ export default function AdminAssessmentsPage() {
     setForm({
       name: session.name,
       description: session.description || "",
+      questionBankId: session.questionBankId || "",
       durationMins: session.durationMins || 45,
       activeFrom: formatDatetimeLocal(session.activeFrom),
       activeUntil: formatDatetimeLocal(session.activeUntil),
@@ -282,7 +312,8 @@ export default function AdminAssessmentsPage() {
       const payload: any = {
         name: form.name.trim(),
         description: form.description || undefined,
-        durationMins: 45,
+        questionBankId: form.questionBankId || null,
+        durationMins: Number(form.durationMins) || 45,
         activeFrom: isoActiveFrom,
         activeUntil: isoActiveUntil,
         passingPercentage: Number(form.passingPercentage),
@@ -642,18 +673,29 @@ export default function AdminAssessmentsPage() {
                         <StatusBadge status={computedStatus} />
                       </td>
 
-                      {/* Col 3: Configuration */}
+                      {/* Col 3: Configuration & Question Bank */}
                       <td className="py-3.5 px-3">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
-                            <BookOpen size={10} /> {TOTAL_QUESTIONS} Qs
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
-                            <Clock size={10} /> {session.durationMins || EXAM_DURATION_MINS} Mins
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200">
-                            <Users size={10} /> {session.totalCandidates} Users
-                          </span>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
+                              <BookOpen size={10} /> {session.totalQuestions || session.questionBank?.questionCount || TOTAL_QUESTIONS} Qs
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
+                              <Clock size={10} /> {session.durationMins || EXAM_DURATION_MINS} Mins
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200">
+                              <Users size={10} /> {session.totalCandidates} Users
+                            </span>
+                          </div>
+                          {session.questionBankName ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/[0.04] text-black text-[10px] font-bold border border-black/10 w-fit">
+                              <Layers size={10} /> Bank: {session.questionBankName}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              Default Shared Bank
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -805,12 +847,43 @@ export default function AdminAssessmentsPage() {
               </button>
             </div>
 
-            {/* Standard constant info banner */}
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold flex items-center gap-2">
-              <Zap size={14} className="text-blue-600" />
-              <span>
-                Shared Question Bank · <strong>60 Questions</strong> • <strong>45 Mins</strong> Duration
-              </span>
+            {/* Question Bank Selector */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">
+                <BookOpen size={12} className="inline mr-1 text-slate-400" />
+                Select Question Bank *
+              </label>
+              <select
+                value={form.questionBankId}
+                onChange={(e) => setForm({ ...form, questionBankId: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 cursor-pointer"
+              >
+                <option value="">Default Shared Bank (60 Questions · 45 Mins)</option>
+                {questionBanks.map((qb) => (
+                  <option key={qb.id} value={qb.id}>
+                    {qb.name} ({qb.questionCount} Questions{qb.category ? ` · ${qb.category}` : ""})
+                  </option>
+                ))}
+              </select>
+              {(() => {
+                const selected = questionBanks.find((b) => b.id === form.questionBankId);
+                if (selected) {
+                  return (
+                    <div className="p-2 rounded-xl bg-slate-100 text-slate-800 text-[11px] font-semibold flex items-center gap-2 border border-slate-200">
+                      <Layers size={13} className="text-slate-600 shrink-0" />
+                      <span>
+                        Linked: <strong>{selected.name}</strong> · {selected.questionCount} Questions ({selected.totalMarks} Total Marks)
+                      </span>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="p-2 rounded-xl bg-slate-50 text-slate-600 text-[11px] font-semibold flex items-center gap-2 border border-slate-200">
+                    <Zap size={13} className="text-slate-400 shrink-0" />
+                    <span>Using default shared question pool (Standard 60 questions)</span>
+                  </div>
+                );
+              })()}
             </div>
 
             {formError && (

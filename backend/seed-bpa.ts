@@ -448,11 +448,16 @@ const BPA_QUESTIONS = [
 async function seedBpaQuiz() {
   console.log('--- Starting BPA Quiz Question Bank Seeding ---');
 
-  // 1. Get or create primary tenant
-  let tenant = await prisma.tenant.findFirst();
+  // 1. Get or create primary tenant (GREATCAMPUS)
+  let tenant = await prisma.tenant.findFirst({
+    where: { OR: [{ slug: 'greatcampus' }, { name: 'GREATCAMPUS' }] },
+  });
+  if (!tenant) {
+    tenant = await prisma.tenant.findFirst();
+  }
   if (!tenant) {
     tenant = await prisma.tenant.create({
-      data: { name: 'GreatCampus', slug: 'greatcampus' },
+      data: { name: 'GREATCAMPUS', slug: 'greatcampus' },
     });
   }
 

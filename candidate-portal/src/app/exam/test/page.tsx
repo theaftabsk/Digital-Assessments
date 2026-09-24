@@ -85,7 +85,12 @@ export default function CandidateTestEngine() {
           const calculatedTime = sessionData.remainingTimeSec !== undefined ? sessionData.remainingTimeSec : (sessionData.durationMins || 45) * 60;
           setTimeLeftSec(calculatedTime);
           setMaxProctorWarnings(sessionData.maxProctorWarnings || 6);
-          setWarningCount(sessionData.warningCount || 0);
+          setProctorConfig({
+            enableTabSwitch: sessionData.enableTabSwitch !== false,
+            enableFullscreen: sessionData.enableFullscreen !== false,
+            enableCopyPaste: sessionData.enableCopyPaste !== false,
+            enableCamera: sessionData.enableCamera !== false,
+          });
 
           const initAnswers: Record<string, { selectedOption: string | null; timeTakenSec: number }> = {};
           sessionData.questions.forEach((q: ExamQuestion) => {
@@ -659,14 +664,16 @@ export default function CandidateTestEngine() {
 
           {/* Right Column: Question Palette & Live Camera Proctor */}
           <div className={`test-sidebar ${paletteOpen ? "open" : ""}`}>
-            {/* Live Camera Proctor Widget */}
-            <div style={{ marginBottom: "14px" }}>
-              <CameraProctor
-                mode="exam"
-                attemptId={attemptId}
-                onWarningTrigger={(evt, msg) => reportProctoringViolation(evt, msg)}
-              />
-            </div>
+            {/* Live Camera Proctor Widget — Only when enableCamera is true */}
+            {proctorConfig.enableCamera && (
+              <div style={{ marginBottom: "14px" }}>
+                <CameraProctor
+                  mode="exam"
+                  attemptId={attemptId}
+                  onWarningTrigger={(evt, msg) => reportProctoringViolation(evt, msg)}
+                />
+              </div>
+            )}
 
             <div className="test-palette-card">
               <div className="test-palette-header">

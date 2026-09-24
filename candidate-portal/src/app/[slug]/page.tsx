@@ -3,18 +3,23 @@
 import { use, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import CameraProctor from "@/components/CameraProctor";
 import PreExamCameraCheck from "@/components/PreExamCameraCheck";
 import ExamLaunchWizardModal from "@/components/ExamLaunchWizardModal";
 import "../exam/exam.css";
-import { User, Mail, Phone, Hash, ArrowRight, BookOpen, AlertTriangle, ShieldCheck, Clock, CheckCircle2 } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Hash,
+  ArrowRight,
+  BookOpen,
+  Clock,
+  ShieldCheck,
+  CheckCircle2,
+  FileQuestion,
+  Sparkles,
+} from "lucide-react";
 import { getApiBaseUrl } from "@/lib/config";
-
-interface AssessmentOption {
-  id: string;
-  name: string;
-  description: string;
-}
 
 function AssessmentContent({ slug }: { slug: string }) {
   const router = useRouter();
@@ -100,7 +105,7 @@ function AssessmentContent({ slug }: { slug: string }) {
             setSelectedAssessmentId(data.assessment.id);
             if (data.assessment.isExpired) {
               setIsAssessmentExpired(true);
-              setError("This assessment session link is no longer active or has expired. Please contact your HR Administrator for a valid link.");
+              setError("This assessment session link is no longer active or has expired. Please contact your administrator for a valid link.");
             } else if (data.assessment.isNotStarted) {
               setIsAssessmentNotStarted(true);
               const fromTime = data.assessment.activeFrom
@@ -120,7 +125,7 @@ function AssessmentContent({ slug }: { slug: string }) {
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.email.trim()) {
-      setError("Please enter your registered email address.");
+      setError("Please enter your email address.");
       return;
     }
     if (!formData.name || !formData.name.trim()) {
@@ -131,6 +136,9 @@ function AssessmentContent({ slug }: { slug: string }) {
     setLoading(true);
     setError("");
 
+    // Auto-generate a clean application ID if left blank by candidate
+    const finalAppId = formData.applicationId?.trim() || `APP-${Date.now().toString(36).toUpperCase()}`;
+
     try {
       const baseUrl = getApiBaseUrl();
 
@@ -138,10 +146,10 @@ function AssessmentContent({ slug }: { slug: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          applicationId: formData.applicationId || undefined,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || undefined,
+          applicationId: finalAppId,
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone?.trim() || undefined,
           assessmentId: selectedAssessmentId || slug,
         }),
       });
@@ -161,10 +169,9 @@ function AssessmentContent({ slug }: { slug: string }) {
         }
         router.push("/exam/test");
       } else {
-        // STRICT REJECTION: Display authorized error message, DO NOT BYPASS!
         setError(
           data.message ||
-          `Access Denied: The email '${formData.email}' is not assigned to this assessment session. Please contact your HR Administrator to be invited.`
+          `Access Denied: Unable to start this assessment session. Please verify your details or contact your administrator.`
         );
       }
     } catch (err: any) {
@@ -174,9 +181,7 @@ function AssessmentContent({ slug }: { slug: string }) {
     }
   };
 
-  const bannerBg = activeAssessment?.tenant?.primaryColor
-    ? `linear-gradient(135deg, ${activeAssessment.tenant.primaryColor}, #0284C7)`
-    : "linear-gradient(135deg, #003F72, #00AEEF)";
+  const isCameraRequired = activeAssessment?.enableCamera === true;
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F5F5F7", display: "flex", flexDirection: "column" }}>
@@ -188,57 +193,163 @@ function AssessmentContent({ slug }: { slug: string }) {
         primaryColor={activeAssessment?.tenant?.primaryColor}
       />
 
-      <main style={{ flex: 1, padding: "clamp(20px, 4vw, 48px) 16px 56px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main style={{ flex: 1, padding: "clamp(12px, 3vw, 40px) clamp(12px, 3vw, 24px) 48px", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{
           width: "100%",
-          maxWidth: "840px",
-          background: "rgba(255, 255, 255, 0.82)",
+          maxWidth: "760px",
+          background: "rgba(255, 255, 255, 0.88)",
           backdropFilter: "blur(24px) saturate(180%)",
           WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          borderRadius: "28px",
+          borderRadius: "clamp(20px, 4vw, 28px)",
           border: "1px solid rgba(0, 0, 0, 0.07)",
-          boxShadow: "0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)",
+          boxShadow: "0 12px 36px -8px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.02)",
           overflow: "hidden"
         }}>
-          {/* Header Card — Pure Black Apple Accent */}
-          <div style={{ background: "#000000", padding: "32px 36px", color: "#FFFFFF" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255, 255, 255, 0.12)", padding: "4px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "12px", border: "1px solid rgba(255, 255, 255, 0.15)" }}>
-              <BookOpen size={12} /> OFFICIAL ASSESSMENT SESSION
+          {/* Header Card — Pure Black Apple Liquid Glass Accent */}
+          <div style={{ background: "#000000", padding: "clamp(24px, 5vw, 36px) clamp(18px, 5vw, 32px)", color: "#FFFFFF" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+              <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "rgba(255, 255, 255, 0.12)",
+                padding: "5px 12px",
+                borderRadius: "20px",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.4px",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                color: "#FFFFFF"
+              }}>
+                <BookOpen size={12} /> OFFICIAL ASSESSMENT
+              </span>
+
+              {activeAssessment?.durationMins && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  padding: "5px 11px",
+                  borderRadius: "20px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.88)"
+                }}>
+                  <Clock size={12} /> {activeAssessment.durationMins} Mins
+                </span>
+              )}
+
+              {isCameraRequired ? (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  padding: "5px 11px",
+                  borderRadius: "20px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.88)"
+                }}>
+                  <ShieldCheck size={12} /> AI Proctored
+                </span>
+              ) : (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  padding: "5px 11px",
+                  borderRadius: "20px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.88)"
+                }}>
+                  Standard Mode
+                </span>
+              )}
             </div>
-            <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: 900, marginBottom: "8px", letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+
+            <h1 style={{
+              fontSize: "clamp(20px, 4.5vw, 28px)",
+              fontWeight: 900,
+              marginBottom: "8px",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.2
+            }}>
               {activeAssessment?.name || (activeAssessment?.tenant?.name ? `${activeAssessment.tenant.name} Assessment` : "Talent Assessment Session")}
             </h1>
-            <p style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.72)", margin: 0, fontWeight: 500, lineHeight: 1.5 }}>
-              {activeAssessment?.description || "Enter your Application ID to begin candidate verification & proctored assessment"}
+
+            <p style={{
+              fontSize: "13px",
+              color: "rgba(255, 255, 255, 0.72)",
+              margin: 0,
+              fontWeight: 500,
+              lineHeight: 1.5
+            }}>
+              {activeAssessment?.description || "Enter your candidate details below to begin the assessment test."}
             </p>
           </div>
 
-          <div style={{ padding: "clamp(24px, 4vw, 40px)" }}>
+          <div style={{ padding: "clamp(20px, 4vw, 36px) clamp(16px, 4vw, 32px)" }}>
             {error && (
-              <div style={{ background: "#FAFAFA", border: "1px solid #E4E4E7", borderRadius: "14px", padding: "14px 18px", color: "#000000", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
+              <div style={{
+                background: "#FAFAFA",
+                border: "1px solid #E4E4E7",
+                borderRadius: "14px",
+                padding: "14px 16px",
+                color: "#000000",
+                fontSize: "13px",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "20px"
+              }}>
                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#000000", flexShrink: 0 }} />
                 <span>{error}</span>
               </div>
             )}
 
             {tokenVerified && (
-              <div style={{ background: "#F4F4F5", border: "1px solid #E4E4E7", borderRadius: "14px", padding: "12px 18px", color: "#000000", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
+              <div style={{
+                background: "#F4F4F5",
+                border: "1px solid #E4E4E7",
+                borderRadius: "14px",
+                padding: "12px 16px",
+                color: "#000000",
+                fontSize: "13px",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "20px"
+              }}>
                 <ShieldCheck size={18} color="#000000" />
-                <span>Authenticated Candidate Record: Details are verified and locked to prevent discrepancy.</span>
+                <span>Authenticated Candidate Record: Details verified.</span>
               </div>
             )}
 
-            <form onSubmit={handleStart} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <form onSubmit={handleStart} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+              {/* Application / Roll ID (Optional) */}
               <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#71717A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Application / Enrolment ID <span style={{ fontWeight: 500, color: "#A1A1AA" }}>(Optional)</span> {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
+                <label style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#52525B",
+                  marginBottom: "6px",
+                  letterSpacing: "-0.01em"
+                }}>
+                  Application / Roll ID <span style={{ fontWeight: 500, color: "#A1A1AA" }}>(Optional)</span> {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
                 </label>
                 <div style={{ position: "relative" }}>
                   <Hash size={16} color="#71717A" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
                   <input
                     type="text"
                     readOnly={tokenVerified}
-                    placeholder="e.g. BMU-CCE/2026/Udaan/111111 (or leave blank to auto-generate)"
+                    placeholder="Enter Application ID (or leave blank to auto-generate)"
                     value={formData.applicationId}
                     onChange={(e) => !tokenVerified && setFormData({ ...formData, applicationId: e.target.value })}
                     disabled={isAssessmentExpired || isAssessmentNotStarted}
@@ -247,22 +358,30 @@ function AssessmentContent({ slug }: { slug: string }) {
                       padding: "13px 14px 13px 42px",
                       borderRadius: "14px",
                       border: "1px solid rgba(0, 0, 0, 0.1)",
-                      fontSize: "14px",
+                      fontSize: "15px",
                       fontWeight: 600,
                       color: "#000000",
                       background: tokenVerified ? "#F4F4F5" : "#FFFFFF",
                       cursor: tokenVerified ? "default" : "text",
                       outline: "none",
-                      transition: "border-color 0.2s ease, box-shadow 0.2s ease"
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
                     }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+              {/* Name & Email Fields */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#71717A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Candidate Name * {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#52525B",
+                    marginBottom: "6px",
+                    letterSpacing: "-0.01em"
+                  }}>
+                    Candidate Full Name * {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
                   </label>
                   <div style={{ position: "relative" }}>
                     <User size={16} color="#71717A" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
@@ -270,7 +389,7 @@ function AssessmentContent({ slug }: { slug: string }) {
                       type="text"
                       required
                       readOnly={tokenVerified}
-                      placeholder="Full Name"
+                      placeholder="e.g. John Doe"
                       value={formData.name}
                       onChange={(e) => !tokenVerified && setFormData({ ...formData, name: e.target.value })}
                       disabled={isAssessmentExpired || isAssessmentNotStarted}
@@ -279,19 +398,27 @@ function AssessmentContent({ slug }: { slug: string }) {
                         padding: "13px 14px 13px 42px",
                         borderRadius: "14px",
                         border: "1px solid rgba(0, 0, 0, 0.1)",
-                        fontSize: "14px",
+                        fontSize: "15px",
                         fontWeight: 600,
                         color: "#000000",
                         background: tokenVerified ? "#F4F4F5" : "#FFFFFF",
                         cursor: tokenVerified ? "default" : "text",
-                        outline: "none"
+                        outline: "none",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
                       }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#71717A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#52525B",
+                    marginBottom: "6px",
+                    letterSpacing: "-0.01em"
+                  }}>
                     Email Address * {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
                   </label>
                   <div style={{ position: "relative" }}>
@@ -300,7 +427,7 @@ function AssessmentContent({ slug }: { slug: string }) {
                       type="email"
                       required
                       readOnly={tokenVerified}
-                      placeholder="candidate@example.com"
+                      placeholder="e.g. candidate@example.com"
                       value={formData.email}
                       onChange={(e) => !tokenVerified && setFormData({ ...formData, email: e.target.value })}
                       disabled={isAssessmentExpired || isAssessmentNotStarted}
@@ -309,61 +436,83 @@ function AssessmentContent({ slug }: { slug: string }) {
                         padding: "13px 14px 13px 42px",
                         borderRadius: "14px",
                         border: "1px solid rgba(0, 0, 0, 0.1)",
-                        fontSize: "14px",
+                        fontSize: "15px",
                         fontWeight: 600,
                         color: "#000000",
                         background: tokenVerified ? "#F4F4F5" : "#FFFFFF",
                         cursor: tokenVerified ? "default" : "text",
-                        outline: "none"
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#71717A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Phone Number * {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <Phone size={16} color="#71717A" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
-                    <input
-                      type="tel"
-                      required
-                      readOnly={tokenVerified}
-                      placeholder="Mobile Number"
-                      value={formData.phone}
-                      onChange={(e) => !tokenVerified && setFormData({ ...formData, phone: e.target.value })}
-                      disabled={isAssessmentExpired || isAssessmentNotStarted}
-                      style={{
-                        width: "100%",
-                        padding: "13px 14px 13px 42px",
-                        borderRadius: "14px",
-                        border: "1px solid rgba(0, 0, 0, 0.1)",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "#000000",
-                        background: tokenVerified ? "#F4F4F5" : "#FFFFFF",
-                        cursor: tokenVerified ? "default" : "text",
-                        outline: "none"
+                        outline: "none",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
                       }}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Live Pre-Exam Device & Camera Verification Card */}
-              <PreExamCameraCheck
-                brandColor="#000000"
-                onStatusChange={(ready) => setCameraVerified(ready)}
-              />
+              {/* Phone Number (Optional) */}
+              <div>
+                <label style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#52525B",
+                  marginBottom: "6px",
+                  letterSpacing: "-0.01em"
+                }}>
+                  Phone Number <span style={{ fontWeight: 500, color: "#A1A1AA" }}>(Optional)</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Phone size={16} color="#71717A" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
+                  <input
+                    type="tel"
+                    readOnly={tokenVerified}
+                    placeholder="e.g. +91 98765 43210 (Optional)"
+                    value={formData.phone}
+                    onChange={(e) => !tokenVerified && setFormData({ ...formData, phone: e.target.value })}
+                    disabled={isAssessmentExpired || isAssessmentNotStarted}
+                    style={{
+                      width: "100%",
+                      padding: "13px 14px 13px 42px",
+                      borderRadius: "14px",
+                      border: "1px solid rgba(0, 0, 0, 0.1)",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "#000000",
+                      background: tokenVerified ? "#F4F4F5" : "#FFFFFF",
+                      cursor: tokenVerified ? "default" : "text",
+                      outline: "none",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                    }}
+                  />
+                </div>
+              </div>
 
-              <div style={{ marginTop: "12px", paddingTop: "20px", borderTop: "1px solid rgba(0,0,0,0.06)", display: "flex", justifyContent: "flex-end" }}>
+              {/* Live Pre-Exam Device & Camera Verification Card: ONLY IF CAMERA IS ENABLED */}
+              {isCameraRequired && (
+                <div style={{ marginTop: "4px" }}>
+                  <PreExamCameraCheck
+                    brandColor="#000000"
+                    onStatusChange={(ready) => setCameraVerified(ready)}
+                  />
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <div style={{
+                marginTop: "12px",
+                paddingTop: "20px",
+                borderTop: "1px solid rgba(0,0,0,0.06)",
+                display: "flex",
+                justifyContent: "flex-end"
+              }}>
                 <button
                   type="submit"
                   disabled={loading || isAssessmentExpired || isAssessmentNotStarted}
                   style={{
-                    padding: "14px 34px",
-                    borderRadius: "14px",
+                    width: "100%",
+                    maxWidth: "320px",
+                    padding: "15px 32px",
+                    borderRadius: "16px",
                     background: isAssessmentExpired || isAssessmentNotStarted
                       ? "#A1A1AA"
                       : "#000000",
@@ -375,8 +524,9 @@ function AssessmentContent({ slug }: { slug: string }) {
                     cursor: isAssessmentExpired || isAssessmentNotStarted ? "not-allowed" : "pointer",
                     display: "inline-flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "10px",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.14)",
+                    boxShadow: "0 4px 18px rgba(0,0,0,0.18)",
                     transition: "transform 0.18s ease, box-shadow 0.18s ease"
                   }}
                 >
@@ -413,4 +563,3 @@ export default function DynamicAssessmentPage({ params }: { params: Promise<{ sl
     </Suspense>
   );
 }
-

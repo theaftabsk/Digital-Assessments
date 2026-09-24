@@ -2,7 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Users, Award, TrendingUp, BookOpen, ChevronRight, ShieldCheck, Building2, FileText, Mail, CheckCircle2 } from "lucide-react";
+import {
+  Users,
+  TrendingUp,
+  BookOpen,
+  ChevronRight,
+  ShieldCheck,
+  Building2,
+  FileText,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  UserX,
+} from "lucide-react";
 import { getApiBaseUrl } from "@/lib/config";
 
 export default function AdminOverviewDashboard() {
@@ -35,14 +47,17 @@ export default function AdminOverviewDashboard() {
       ...(activeRole === "VENDOR" && activeVendorId ? { "x-vendor-id": activeVendorId, "x-user-role": "VENDOR" } : {}),
     };
 
-    const candUrl = activeRole === "VENDOR" && activeVendorId
-      ? `${baseUrl}/api/v1/candidates?vendorId=${activeVendorId}`
-      : `${baseUrl}/api/v1/candidates`;
+    const candUrl =
+      activeRole === "VENDOR" && activeVendorId
+        ? `${baseUrl}/api/v1/candidates?vendorId=${activeVendorId}`
+        : `${baseUrl}/api/v1/candidates`;
 
     Promise.all([
       fetch(candUrl, { headers }).then((r) => r.json()),
       fetch(`${baseUrl}/api/v1/assessments`, { headers }).then((r) => r.json()),
-      activeRole !== "VENDOR" ? fetch(`${baseUrl}/api/v1/questions`, { headers }).then((r) => r.json()) : Promise.resolve({ questions: [] }),
+      activeRole !== "VENDOR"
+        ? fetch(`${baseUrl}/api/v1/questions`, { headers }).then((r) => r.json())
+        : Promise.resolve({ questions: [] }),
     ])
       .then(([cRes, aRes, qRes]) => {
         if (cRes?.success) setCandidates(cRes.candidates || []);
@@ -55,9 +70,9 @@ export default function AdminOverviewDashboard() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-3">
-        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs text-slate-500 font-bold">Loading Dashboard Analytics...</p>
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs text-zinc-500 font-bold tracking-tight">Loading Dashboard Analytics...</p>
       </div>
     );
   }
@@ -69,35 +84,41 @@ export default function AdminOverviewDashboard() {
   const lockedCand = candidates.filter((c) => c.status === "LOCKED" || c.attempt?.status === "LOCKED");
   const registeredCand = candidates.filter((c) => c.status === "REGISTERED" || !c.attempt);
 
-  const avgScore = completedCand.length > 0
-    ? Math.round(completedCand.reduce((acc, c) => acc + (c.attempt?.percentage || c.percentage || 0), 0) / completedCand.length)
-    : 0;
-  const passedCount = completedCand.filter((c) => c.attempt?.isPassed || c.attempt?.percentage >= 50).length;
+  const avgScore =
+    completedCand.length > 0
+      ? Math.round(
+          completedCand.reduce((acc, c) => acc + (c.attempt?.percentage || c.percentage || 0), 0) /
+            completedCand.length
+        )
+      : 0;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       
-      {/* Welcome Banner for Vendor / Admin */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <span className="text-[11px] font-extrabold text-blue-600 uppercase tracking-wider">
-            {isVendor ? "Vendor Control Panel" : "Recruitment & Evaluation Center"}
-          </span>
-          <h1 className="text-xl font-black text-slate-900 mt-0.5">
+      {/* Top Apple Liquid Glass Banner */}
+      <div className="bg-white/80 backdrop-blur-2xl p-6 sm:p-7 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-all">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-black"></span>
+            <span className="text-[11px] font-black uppercase tracking-wider text-zinc-500">
+              {isVendor ? "Vendor Control Panel" : "Talent Assessment & Operations"}
+            </span>
+          </div>
+          <h1 className="text-2xl font-black text-black tracking-tight">
             Welcome back, {userName}
           </h1>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-zinc-500 font-medium tracking-tight max-w-2xl">
             {isVendor
-              ? "Manage your assigned candidate batches, bulk upload via Excel, and monitor live exam diagnostics."
-              : "Overview of all active assessments, candidate evaluations, vendor allocations, and exam integrity logs."}
+              ? "Manage candidate batches, upload roster files, and monitor real-time test progress."
+              : "Real-time overview of active exams, candidate evaluations, proctoring metrics, and system activity."}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 shrink-0">
           {isVendor ? (
             <Link
               href="/admin/assessments"
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20"
+              className="px-4 py-2.5 bg-black hover:bg-black/90 text-white rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm transition"
             >
               <FileText size={14} />
               <span>My Assessments ({assessments.length})</span>
@@ -105,116 +126,157 @@ export default function AdminOverviewDashboard() {
           ) : (
             <Link
               href="/admin/vendors"
-              className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-black/[0.04] hover:bg-black/[0.08] text-black border border-black/[0.08] rounded-2xl text-xs font-bold flex items-center gap-2 transition"
             >
               <Building2 size={14} />
               <span>Manage Vendors</span>
             </Link>
           )}
+          <Link
+            href="/admin/assessments"
+            className="px-4 py-2.5 bg-black text-white hover:bg-black/90 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm transition"
+          >
+            <span>+ Create Exam</span>
+          </Link>
         </div>
       </div>
 
-      {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* Overview Metric Cards (Strict Apple Monochrome) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+        {/* Total Candidates */}
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+            <p className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">
               {isVendor ? "My Candidates" : "Total Candidates"}
             </p>
-            <p className="text-2xl font-black text-slate-900 mt-1">{totalCand}</p>
-            <span className="text-[11px] font-bold text-emerald-600 mt-0.5 inline-block">
-              {isVendor ? "Your Registered Batch" : "Registered Pool"}
-            </span>
+            <p className="text-3xl font-black text-black tracking-tight mt-1">{totalCand}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">
+                {isVendor ? "Assigned Roster" : "Candidate Pool"}
+              </span>
+            </div>
           </div>
-          <div className="w-11 h-11 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+        {/* Average Score */}
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Average Score</p>
-            <p className="text-2xl font-black text-slate-900 mt-1">{avgScore}%</p>
-            <span className="text-[11px] font-bold text-blue-600 mt-0.5 inline-block">{completedCand.length} Completed</span>
+            <p className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Average Score</p>
+            <p className="text-3xl font-black text-black tracking-tight mt-1">{avgScore}%</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">
+                {completedCand.length} Evaluated
+              </span>
+            </div>
           </div>
-          <div className="w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+        {/* Completed Sessions */}
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Completed Exams</p>
-            <p className="text-2xl font-black text-emerald-600 mt-1">{completedCand.length}</p>
-            <span className="text-[11px] font-bold text-slate-500 mt-0.5 inline-block">Evaluated Sessions</span>
+            <p className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Completed Sessions</p>
+            <p className="text-3xl font-black text-black tracking-tight mt-1">{completedCand.length}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Final Submissions</span>
+            </div>
           </div>
-          <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+        {/* Question Bank Pool */}
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
-              {isVendor ? "Assigned Assessments" : "Question Bank"}
+            <p className="text-[11px] font-black uppercase text-zinc-400 tracking-wider">
+              {isVendor ? "Assigned Exams" : "Question Bank"}
             </p>
-            <p className="text-2xl font-black text-slate-900 mt-1">
+            <p className="text-3xl font-black text-black tracking-tight mt-1">
               {isVendor ? assessments.length : questions.length}
             </p>
-            <span className="text-[11px] font-bold text-slate-500 mt-0.5 inline-block">
-              {isVendor ? "Active Test Sessions" : "Shared Questions Pool"}
-            </span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">
+                {isVendor ? "Active Assessments" : "Question Pool"}
+              </span>
+            </div>
           </div>
-          <div className="w-11 h-11 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
             {isVendor ? <FileText className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
           </div>
         </div>
 
       </div>
 
-      {/* Candidate Performance Summary Card */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-blue-600" />
-            <h2 className="text-sm font-extrabold text-slate-900">
-              {isVendor ? "My Candidates Exam Progress" : "Candidate Performance Status Summary"}
+      {/* Candidate Performance Status Summary (Apple Liquid Glass) */}
+      <div className="bg-white/80 backdrop-blur-2xl p-6 sm:p-7 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] space-y-5">
+        <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
+          <div className="flex items-center space-x-2.5">
+            <ShieldCheck className="w-5 h-5 text-black" />
+            <h2 className="text-sm font-black text-black tracking-tight">
+              {isVendor ? "Candidates Exam Lifecycle Progress" : "Candidate Performance Status Summary"}
             </h2>
           </div>
-          <Link href="/admin/candidates" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center space-x-1">
+          <Link
+            href="/admin/candidates"
+            className="text-xs font-bold text-black hover:opacity-75 flex items-center gap-1 tracking-tight transition"
+          >
             <span>View Full Directory</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Status Breakdown Bar */}
+        {/* 4 Status Breakdown Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-            <span className="text-[10px] font-extrabold uppercase text-emerald-600 tracking-wider">Completed</span>
-            <p className="text-xl font-black text-emerald-800 mt-1">{completedCand.length}</p>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+          
+          <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.06] hover:bg-black/[0.04] transition">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-black"></span>
+              <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Completed</span>
+            </div>
+            <p className="text-2xl font-black text-black tracking-tight mt-2">{completedCand.length}</p>
+            <p className="text-[11px] text-zinc-500 font-semibold tracking-tight mt-0.5">
               {totalCand > 0 ? `${Math.round((completedCand.length / totalCand) * 100)}%` : "0%"} of Total
             </p>
           </div>
 
-          <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-            <span className="text-[10px] font-extrabold uppercase text-blue-600 tracking-wider">In Progress</span>
-            <p className="text-xl font-black text-blue-800 mt-1">{inProgressCand.length}</p>
-            <p className="text-[11px] text-blue-600 font-semibold mt-0.5">Live Exam Sessions</p>
+          <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.06] hover:bg-black/[0.04] transition">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-black"></span>
+              <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">In Progress</span>
+            </div>
+            <p className="text-2xl font-black text-black tracking-tight mt-2">{inProgressCand.length}</p>
+            <p className="text-[11px] text-zinc-500 font-semibold tracking-tight mt-0.5">Live Sessions</p>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">Not Started</span>
-            <p className="text-xl font-black text-slate-700 mt-1">{registeredCand.length}</p>
-            <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Pending Candidate Login</p>
+          <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.06] hover:bg-black/[0.04] transition">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-zinc-400"></span>
+              <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Not Started</span>
+            </div>
+            <p className="text-2xl font-black text-black tracking-tight mt-2">{registeredCand.length}</p>
+            <p className="text-[11px] text-zinc-500 font-semibold tracking-tight mt-0.5">Pending Login</p>
           </div>
 
-          <div className="p-4 bg-red-50 rounded-xl border border-red-100">
-            <span className="text-[10px] font-extrabold uppercase text-red-600 tracking-wider">Locked / Flagged</span>
-            <p className="text-xl font-black text-red-800 mt-1">{lockedCand.length}</p>
-            <p className="text-[11px] text-red-600 font-semibold mt-0.5">Proctoring Violations</p>
+          <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.06] hover:bg-black/[0.04] transition">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-black"></span>
+              <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">Locked / Flagged</span>
+            </div>
+            <p className="text-2xl font-black text-black tracking-tight mt-2">{lockedCand.length}</p>
+            <p className="text-[11px] text-zinc-500 font-semibold tracking-tight mt-0.5">Integrity Violations</p>
           </div>
+
         </div>
       </div>
 

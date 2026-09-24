@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-plus-jakarta",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-inter",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Talent Assessment - HR Admin Evaluation Portal",
+  title: "GreatCampus — Talent Assessment & Evaluation System",
   description: "Enterprise Talent Assessment & Automated AI Proctoring Administration Platform",
   icons: {
     icon: "/icon.png",
@@ -25,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={plusJakartaSans.variable}>
-      <body className={`${plusJakartaSans.className} antialiased bg-slate-50 text-slate-900`}>
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-full bg-[#F5F5F7] text-black font-sans selection:bg-black selection:text-white">
         {children}
       </body>
     </html>

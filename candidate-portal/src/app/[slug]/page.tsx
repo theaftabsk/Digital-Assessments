@@ -231,15 +231,14 @@ function AssessmentContent({ slug }: { slug: string }) {
             <form onSubmit={handleStart} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "11px", fontWeight: 800, color: "#71717A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Application / Enrolment ID * {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
+                  Application / Enrolment ID <span style={{ fontWeight: 500, color: "#A1A1AA" }}>(Optional)</span> {tokenVerified && <span style={{ color: "#000000", fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} /> (Verified)</span>}
                 </label>
                 <div style={{ position: "relative" }}>
                   <Hash size={16} color="#71717A" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
                   <input
                     type="text"
-                    required
                     readOnly={tokenVerified}
-                    placeholder="e.g. BMU-CCE/2026/Udaan/111111"
+                    placeholder="e.g. BMU-CCE/2026/Udaan/111111 (or leave blank to auto-generate)"
                     value={formData.applicationId}
                     onChange={(e) => !tokenVerified && setFormData({ ...formData, applicationId: e.target.value })}
                     disabled={isAssessmentExpired || isAssessmentNotStarted}

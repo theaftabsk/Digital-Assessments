@@ -1325,7 +1325,7 @@ export class CandidatesService {
       },
     });
 
-    const frontendBaseUrl = process.env.CANDIDATE_PORTAL_URL || process.env.FRONTEND_CANDIDATE_URL || 'http://localhost:3000';
+    const frontendBaseUrl = process.env.CANDIDATE_PORTAL_URL || process.env.FRONTEND_CANDIDATE_URL || 'https://assessment.greatcampus.tech';
 
     return assessments.map((ass) => {
       // Auto-compute status based on activeFrom/activeUntil
@@ -1395,7 +1395,7 @@ export class CandidatesService {
       isExpired = true;
     }
 
-    const frontendBaseUrl = process.env.CANDIDATE_PORTAL_URL || process.env.FRONTEND_CANDIDATE_URL || 'http://localhost:3000';
+    const frontendBaseUrl = process.env.CANDIDATE_PORTAL_URL || process.env.FRONTEND_CANDIDATE_URL || 'https://assessment.greatcampus.tech';
 
     return {
       id: assessment.id,

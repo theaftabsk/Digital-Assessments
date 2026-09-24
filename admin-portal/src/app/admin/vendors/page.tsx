@@ -344,123 +344,134 @@ export default function VendorsManagementPage() {
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <Building2 size={22} />
-            </span>
-            <div>
-              <h1 className="text-xl font-black text-slate-900">Vendors Management</h1>
-              <p className="text-xs text-slate-500 font-medium">
-                Create vendor logins, assign specific assessments, and monitor isolated candidate batches.
-              </p>
-            </div>
-          </div>
+      {/* ── 1. Apple Liquid Glass Toolbar (No Duplicate In-Page Header) ── */}
+      <div className="bg-white/80 backdrop-blur-2xl p-4 sm:p-5 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] flex flex-wrap items-center justify-between gap-4">
+        {/* Search Box */}
+        <div className="relative flex-1 min-w-[260px] max-w-md">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search vendor name, code, email, contact..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-black/[0.03] border border-black/[0.06] rounded-2xl text-xs font-semibold text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition"
+          />
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={loadData}
             disabled={loading}
-            className="p-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            className="p-2.5 bg-black/[0.03] hover:bg-black/[0.06] text-black rounded-2xl transition font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-black/[0.06]"
             title="Refresh Vendors"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            <span>Refresh</span>
+            <RefreshCw size={14} className={loading ? "animate-spin text-black" : ""} />
+            <span className="hidden sm:inline">Refresh</span>
           </button>
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-black hover:bg-black/85 text-white rounded-2xl font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Add New Vendor</span>
           </button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Vendors</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{vendors.length}</h3>
-            <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 mt-1">
-              <ShieldCheck size={12} /> {vendors.filter((v) => v.status === "ACTIVE").length} Active
-            </span>
+      {/* ── 2. Top Stats Cards (Apple Monochrome) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="bg-white/80 backdrop-blur-2xl p-5 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black text-zinc-400 uppercase tracking-wider">Total Vendors</span>
+            <div className="text-3xl font-black text-black tracking-tight">{vendors.length}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">
+                {vendors.filter((v) => v.status === "ACTIVE").length} Active Agencies
+              </span>
+            </div>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-            <Users size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Vendor Candidates</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{totalCandidatesAll}</h3>
-            <span className="text-[11px] font-semibold text-slate-500 mt-1">Uploaded across vendors</span>
-          </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-            <UserCheck size={24} />
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Vendor Exam Usage</p>
-            <h3 className="text-2xl font-black text-blue-600 mt-1">{totalCreditAll}</h3>
-            <span className="text-[11px] font-semibold text-slate-500 mt-1">Exams launched</span>
+        <div className="bg-white/80 backdrop-blur-2xl p-5 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black text-zinc-400 uppercase tracking-wider">Vendor Candidates</span>
+            <div className="text-3xl font-black text-black tracking-tight">{totalCandidatesAll}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Assigned Across Batches</span>
+            </div>
           </div>
-          <div className="p-3 bg-cyan-50 text-cyan-600 rounded-2xl">
-            <Activity size={24} />
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
+            <UserCheck className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Assessments</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{assessments.length}</h3>
-            <span className="text-[11px] font-semibold text-slate-500 mt-1">Available to assign</span>
+        <div className="bg-white/80 backdrop-blur-2xl p-5 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black text-zinc-400 uppercase tracking-wider">Exam Consumption</span>
+            <div className="text-3xl font-black text-black tracking-tight">{totalCreditAll}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Credits Utilized</span>
+            </div>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
-            <Layers size={24} />
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
+            <Activity className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-2xl p-5 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.06)] transition-all flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-black text-zinc-400 uppercase tracking-wider">Active Assessments</span>
+            <div className="text-3xl font-black text-black tracking-tight">{assessments.length}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+              <span className="text-[11px] font-bold text-zinc-500 tracking-tight">Available For Assignment</span>
+            </div>
+          </div>
+          <div className="w-11 h-11 bg-black/[0.04] border border-black/[0.06] text-black rounded-2xl flex items-center justify-center shrink-0">
+            <Layers className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* 🔒 Protected Vendor API Documentation & Swagger Access Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-2xl p-5 text-white shadow-md border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* ── 3. Protected Vendor API Documentation Banner ── */}
+      <div className="bg-black text-white rounded-3xl p-5 shadow-sm border border-black/[0.1] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1.5 max-w-2xl">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30">
-              <Lock size={16} />
+            <div className="p-1.5 bg-white/10 text-white rounded-xl border border-white/20">
+              <Lock size={15} />
             </div>
-            <h3 className="text-sm font-black text-white flex items-center gap-2">
+            <h3 className="text-sm font-black text-white tracking-tight">
               Protected Vendor API Documentation (Swagger OAS 3.0)
             </h3>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              Secured & Locked
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-white border border-white/20">
+              Secured
             </span>
           </div>
-          <p className="text-xs text-slate-300 font-medium leading-relaxed">
-            Locked documentation link for external vendors and agency developers. Unauthorized public visits are blocked. Share only with authorized partners.
+          <p className="text-xs text-zinc-400 font-medium leading-relaxed tracking-tight">
+            Protected endpoint for external vendor developer teams to automate candidate registration and retrieve scores via REST.
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[11px]">
-            <span className="text-slate-400">Portal User:</span>
-            <code className="px-2 py-0.5 bg-slate-800 text-sky-300 rounded border border-slate-700 font-bold">niva-admin</code>
-            <span className="text-slate-400 ml-1">Password:</span>
-            <code className="px-2 py-0.5 bg-slate-800 text-amber-300 rounded border border-slate-700 font-bold">Niva@Doc2026!</code>
+            <span className="text-zinc-400">Portal User:</span>
+            <code className="px-2 py-0.5 bg-white/10 text-white rounded-lg border border-white/15 font-bold">niva-admin</code>
+            <span className="text-zinc-400 ml-1">Password:</span>
+            <code className="px-2 py-0.5 bg-white/10 text-white rounded-lg border border-white/15 font-bold">Niva@Doc2026!</code>
             <button
               onClick={() => {
                 navigator.clipboard.writeText("Niva@Doc2026!");
                 setCopiedDocPass(true);
                 setTimeout(() => setCopiedDocPass(false), 2000);
               }}
-              className="text-[10px] text-blue-400 hover:text-white underline cursor-pointer ml-1"
+              className="text-[10px] text-zinc-300 hover:text-white underline cursor-pointer ml-1"
             >
-              {copiedDocPass ? "✓ Password Copied" : "Copy Password"}
+              {copiedDocPass ? "✓ Copied" : "Copy Password"}
             </button>
           </div>
         </div>
@@ -472,9 +483,9 @@ export default function VendorsManagementPage() {
               setCopiedDocLink(true);
               setTimeout(() => setCopiedDocLink(false), 2000);
             }}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl text-xs font-bold transition-all border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white rounded-2xl text-xs font-bold transition border border-white/15 flex items-center gap-1.5 cursor-pointer"
           >
-            {copiedDocLink ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+            {copiedDocLink ? <Check size={14} className="text-white" /> : <Copy size={14} />}
             <span>{copiedDocLink ? "Link Copied!" : "Copy Doc URL"}</span>
           </button>
 
@@ -482,7 +493,7 @@ export default function VendorsManagementPage() {
             href={`${getApiBaseUrl()}/api/docs?key=Niva@Doc2026!`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer no-underline"
+            className="px-4 py-2 bg-white hover:bg-zinc-100 text-black rounded-2xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer no-underline"
           >
             <ExternalLink size={14} />
             <span>Open API Docs</span>
@@ -490,123 +501,112 @@ export default function VendorsManagementPage() {
         </div>
       </div>
 
-      {/* Vendors Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* ── 4. Vendors Table (Apple Liquid Glass) ── */}
+      <div className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] overflow-hidden">
         {/* Table Search & Filter Bar */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50/50">
-          <div className="relative flex-1 max-w-md">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search vendor name, code, email, contact..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
-            />
-          </div>
-
-          <div className="text-xs font-bold text-slate-500">
-            Showing {filteredVendors.length} of {vendors.length} Vendor(s)
+        <div className="p-4 border-b border-black/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-black/[0.01]">
+          <div className="text-xs font-bold text-zinc-500">
+            Showing {filteredVendors.length} of {vendors.length} Registered Agencies
           </div>
         </div>
 
         {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider">
-                <th className="py-3 px-4">Vendor Code & Name</th>
-                <th className="py-3 px-4">Login Credentials</th>
-                <th className="py-3 px-4">Assigned Assessments</th>
-                <th className="py-3 px-4 text-center">Candidates</th>
-                <th className="py-3 px-4 text-center">Exam Credits</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+              <tr className="bg-black/[0.02] border-b border-black/[0.06] text-zinc-500 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-4 px-4">Vendor Code & Name</th>
+                <th className="py-4 px-4">Login Credentials</th>
+                <th className="py-4 px-4">Assigned Assessments</th>
+                <th className="py-4 px-4 text-center">Candidates</th>
+                <th className="py-4 px-4 text-center">Exam Credits</th>
+                <th className="py-4 px-4 text-center">Status</th>
+                <th className="py-4 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-black/[0.04] text-black">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 font-semibold">
+                  <td colSpan={7} className="py-16 text-center text-zinc-400 font-semibold">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading vendor accounts...</span>
+                      <div className="w-7 h-7 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs">Loading vendor accounts...</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={7} className="py-16 text-center text-zinc-500 font-medium">
                     <div className="flex flex-col items-center gap-2">
-                      <Building2 size={32} className="text-slate-300" />
-                      <span className="font-bold text-sm text-slate-700">No vendors found</span>
-                      <span className="text-xs text-slate-400">Click &quot;Add New Vendor&quot; above to create the first vendor account.</span>
+                      <Building2 size={28} className="text-zinc-300" />
+                      <span className="font-bold text-sm text-black">No vendors found</span>
+                      <span className="text-xs text-zinc-400">Click &quot;Add New Vendor&quot; above to create the first vendor account.</span>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredVendors.map((vendor) => (
-                  <tr key={vendor.id} className="hover:bg-blue-50/30 transition-colors">
+                  <tr key={vendor.id} className="hover:bg-black/[0.015] transition-colors">
                     {/* Name & Code */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-4 px-4">
                       <div className="flex items-center gap-2.5">
                         <Link
                           href={`/admin/vendors/${vendor.id}`}
-                          className="w-9 h-9 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-700 font-black flex items-center justify-center text-xs shrink-0 transition-colors"
+                          className="w-9 h-9 rounded-2xl bg-black text-white font-black flex items-center justify-center text-xs shrink-0 shadow-xs"
                         >
                           {vendor.name.slice(0, 2).toUpperCase()}
                         </Link>
                         <div>
-                          <div className="font-black text-slate-900 flex items-center gap-1.5">
+                          <div className="font-black text-black flex items-center gap-1.5 tracking-tight">
                             <Link
                               href={`/admin/vendors/${vendor.id}`}
-                              className="hover:text-blue-600 hover:underline transition-colors"
+                              className="hover:opacity-75 transition"
                             >
                               {vendor.name}
                             </Link>
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/[0.04] text-black border border-black/[0.06]">
                               {vendor.vendorCode}
                             </span>
                           </div>
                           {vendor.contactPerson && (
-                            <p className="text-[11px] text-slate-500 font-medium mt-0.5">Contact: {vendor.contactPerson}</p>
+                            <p className="text-[11px] text-zinc-400 font-medium tracking-tight mt-0.5">Contact: {vendor.contactPerson}</p>
                           )}
                         </div>
                       </div>
                     </td>
 
                     {/* Email, Phone & API Key */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-4 px-4">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                          <Mail size={12} className="text-blue-500 shrink-0" />
+                        <div className="flex items-center gap-1.5 font-bold text-black tracking-tight">
+                          <Mail size={12} className="text-zinc-400 shrink-0" />
                           <span>{vendor.email}</span>
                           <button
                             onClick={() => handleCopy(vendor.email)}
-                            className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-700 cursor-pointer"
+                            className="p-1 hover:bg-black/[0.04] rounded-lg text-zinc-400 hover:text-black cursor-pointer"
                             title="Copy email"
                           >
-                            {copiedEmail === vendor.email ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                            {copiedEmail === vendor.email ? <Check size={11} className="text-black" /> : <Copy size={11} />}
                           </button>
                         </div>
                         {vendor.phone && (
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
-                            <Phone size={11} className="text-slate-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-semibold tracking-tight">
+                            <Phone size={11} className="text-zinc-400 shrink-0" />
                             <span>{vendor.phone}</span>
                           </div>
                         )}
                         {vendor.apiKey && (
                           <div className="flex items-center gap-1.5 pt-0.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-mono text-[10px] font-bold border border-purple-200">
-                              <KeyRound size={10} className="text-purple-600" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.04] text-black font-mono text-[10px] font-bold border border-black/[0.06]">
+                              <KeyRound size={10} className="text-black" />
                               <span className="truncate max-w-[110px]">{vendor.apiKey}</span>
                             </span>
                             <button
                               onClick={() => handleCopyApiKey(vendor.apiKey || "")}
-                              className="p-1 hover:bg-purple-100 rounded text-purple-600 hover:text-purple-900 cursor-pointer"
+                              className="p-1 hover:bg-black/[0.06] rounded-lg text-zinc-500 hover:text-black cursor-pointer"
                               title="Copy Vendor API Key"
                             >
-                              {copiedApiKey === vendor.apiKey ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                              {copiedApiKey === vendor.apiKey ? <Check size={11} className="text-black" /> : <Copy size={11} />}
                             </button>
                           </div>
                         )}
@@ -614,13 +614,13 @@ export default function VendorsManagementPage() {
                     </td>
 
                     {/* Assigned Assessments */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-4 px-4">
                       {vendor.assignedAssessments && vendor.assignedAssessments.length > 0 ? (
                         <div className="flex flex-wrap gap-1 max-w-xs">
                           {vendor.assignedAssessments.map((a) => (
                             <span
                               key={a.id}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/[0.03] text-black font-bold text-[11px] border border-black/[0.06]"
                             >
                               <FileText size={10} />
                               <span className="truncate max-w-[120px]">{a.name}</span>
@@ -628,46 +628,46 @@ export default function VendorsManagementPage() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                        <span className="text-[11px] font-semibold text-zinc-400 bg-black/[0.02] px-2.5 py-1 rounded-xl border border-black/[0.06]">
                           No Tests Assigned
                         </span>
                       )}
                     </td>
 
                     {/* Candidates Count */}
-                    <td className="py-3.5 px-4 text-center">
-                      <span className="font-extrabold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    <td className="py-4 px-4 text-center">
+                      <span className="font-black text-black bg-black/[0.03] px-2.5 py-1 rounded-xl border border-black/[0.06]">
                         {vendor.totalCandidates || 0}
                       </span>
                     </td>
 
                     {/* Credit Used */}
-                    <td className="py-3.5 px-4 text-center">
-                      <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                    <td className="py-4 px-4 text-center">
+                      <span className="font-black text-black bg-black/[0.03] px-2.5 py-1 rounded-xl border border-black/[0.06]">
                         {vendor.creditUsed || 0}
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="py-3.5 px-4 text-center">
+                    <td className="py-4 px-4 text-center">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                           vendor.status === "ACTIVE"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-slate-100 text-slate-600"
+                            ? "bg-black text-white shadow-xs"
+                            : "bg-black/[0.03] text-zinc-400 border border-black/[0.06]"
                         }`}
                       >
-                        {vendor.status === "ACTIVE" ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
+                        <span className={`w-1.5 h-1.5 rounded-full ${vendor.status === "ACTIVE" ? "bg-white" : "bg-zinc-400"}`}></span>
                         {vendor.status}
                       </span>
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-4 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
                           href={`/admin/vendors/${vendor.id}`}
-                          className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 cursor-pointer border border-purple-200/60"
+                          className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black rounded-xl font-bold text-[11px] transition flex items-center gap-1 cursor-pointer border border-black/[0.06]"
                           title="View 360° Profile & Logs"
                         >
                           <Eye size={12} />
@@ -676,7 +676,7 @@ export default function VendorsManagementPage() {
 
                         <button
                           onClick={() => openAssignModal(vendor)}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black rounded-xl font-bold text-[11px] transition flex items-center gap-1 cursor-pointer border border-black/[0.06]"
                           title="Assign Assessments"
                         >
                           <FileText size={12} />
@@ -685,7 +685,7 @@ export default function VendorsManagementPage() {
 
                         <button
                           onClick={() => openEditModal(vendor)}
-                          className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-lg transition-all cursor-pointer"
+                          className="p-2 hover:bg-black/[0.04] text-zinc-600 hover:text-black rounded-xl border border-black/[0.06] bg-white transition cursor-pointer"
                           title="Edit Details / Reset Password"
                         >
                           <Edit2 size={13} />
@@ -693,7 +693,7 @@ export default function VendorsManagementPage() {
 
                         <button
                           onClick={() => handleDeleteVendor(vendor)}
-                          className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-all cursor-pointer"
+                          className="p-2 hover:bg-red-50 text-zinc-400 hover:text-red-600 rounded-xl border border-black/[0.06] bg-white transition cursor-pointer"
                           title="Remove Vendor"
                         >
                           <Trash2 size={13} />

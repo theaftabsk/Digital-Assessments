@@ -343,62 +343,34 @@ export default function CandidatesManagementPage() {
   const inProgressCount = candidates.filter((c) => c.status === "IN_PROGRESS").length;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6 font-sans">
-      {/* Clean Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Candidate Evaluation</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-1">
-            Monitor candidate assessment progress, scores, proctoring warnings, and unlock accounts.
-          </p>
-        </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-        {/* Action Controls */}
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={downloadExcelReport}
-            title={`Download 5-Sheet Excel Report (${filteredCandidates.length} filtered candidate${filteredCandidates.length === 1 ? '' : 's'})`}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-2xs flex items-center space-x-2 cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download 5-Sheet Excel Report ({filteredCandidates.length})</span>
-          </button>
-
-          <button
-            onClick={loadData}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition border border-slate-200 shadow-2xs flex items-center space-x-2 cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Controls Row: Search + Assessment Filter + Status Tabs */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+      {/* ── 1. Apple Liquid Glass Toolbar (No Duplicate In-Page Header) ── */}
+      <div className="bg-white/80 backdrop-blur-2xl p-4 sm:p-5 rounded-3xl border border-black/[0.05] shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] space-y-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           
           {/* Search Box */}
           <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search candidate name, email, phone or application ID..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2 bg-black/[0.03] border border-black/[0.06] rounded-2xl text-xs font-semibold text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition"
             />
           </div>
 
           {/* Assessment Dropdown Filter */}
-          <div className="flex items-center gap-2 min-w-[240px]">
-            <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
-              <BookOpen className="w-3.5 h-3.5 text-blue-600" /> Assessment:
+          <div className="flex items-center gap-2 min-w-[220px]">
+            <span className="text-xs font-bold text-zinc-600 flex items-center gap-1">
+              <BookOpen className="w-3.5 h-3.5 text-black" /> Assessment:
             </span>
             <select
               value={selectedAssessmentId}
               onChange={(e) => setSelectedAssessmentId(e.target.value)}
-              className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 bg-black/[0.03] border border-black/[0.06] rounded-2xl text-xs font-bold text-black focus:outline-none focus:border-black transition cursor-pointer"
             >
               <option value="ALL">All Assessments</option>
               {assessments.map((a) => (
@@ -411,14 +383,14 @@ export default function CandidatesManagementPage() {
 
           {/* Vendor Dropdown Filter (Admin only) */}
           {userRole !== "VENDOR" && (
-            <div className="flex items-center gap-2 min-w-[220px]">
-              <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
-                <Building2 className="w-3.5 h-3.5 text-blue-600" /> Vendor:
+            <div className="flex items-center gap-2 min-w-[200px]">
+              <span className="text-xs font-bold text-zinc-600 flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-black" /> Vendor:
               </span>
               <select
                 value={selectedVendorId}
                 onChange={(e) => setSelectedVendorId(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 bg-black/[0.03] border border-black/[0.06] rounded-2xl text-xs font-bold text-black focus:outline-none focus:border-black transition cursor-pointer"
               >
                 <option value="ALL">All Vendors (All)</option>
                 {vendors.map((v) => (
@@ -429,10 +401,31 @@ export default function CandidatesManagementPage() {
               </select>
             </div>
           )}
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={downloadExcelReport}
+              title={`Download 5-Sheet Excel Report (${filteredCandidates.length} filtered candidate${filteredCandidates.length === 1 ? '' : 's'})`}
+              className="px-4 py-2 bg-black hover:bg-black/85 text-white font-bold text-xs rounded-2xl transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download Excel ({filteredCandidates.length})</span>
+            </button>
+
+            <button
+              onClick={loadData}
+              className="p-2.5 bg-black/[0.03] hover:bg-black/[0.06] text-black font-bold text-xs rounded-2xl transition border border-black/[0.06] flex items-center space-x-1 cursor-pointer"
+              title="Refresh Candidates"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
         </div>
 
         {/* Status Filter Tabs & Exclude 0% Scores Toggle */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+        <div className="flex items-center justify-between pt-3 border-t border-black/[0.05] flex-wrap gap-2">
           <div className="flex items-center space-x-1.5 overflow-x-auto py-1 flex-wrap gap-y-2">
             {[
               { id: "ALL", label: `All (${candidates.length})` },
@@ -447,8 +440,8 @@ export default function CandidatesManagementPage() {
                 onClick={() => { setStatusFilter(tab.id); setCurrentPage(1); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   statusFilter === tab.id
-                    ? "bg-slate-900 text-white shadow-2xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-black text-white shadow-xs"
+                    : "bg-black/[0.03] text-zinc-600 hover:text-black hover:bg-black/[0.06]"
                 }`}
               >
                 {tab.label}
@@ -458,31 +451,26 @@ export default function CandidatesManagementPage() {
             {/* Exclude 0% Scores Filter Toggle */}
             <label className={`ml-2 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-2 border select-none ${
               excludeZeroScores
-                ? "bg-amber-50 text-amber-900 border-amber-300 shadow-xs"
-                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                ? "bg-black text-white border-black shadow-xs"
+                : "bg-black/[0.02] text-zinc-600 border-black/[0.06] hover:bg-black/[0.04]"
             }`}>
               <input
                 type="checkbox"
                 checked={excludeZeroScores}
                 onChange={(e) => { setExcludeZeroScores(e.target.checked); setCurrentPage(1); }}
-                className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                className="w-3.5 h-3.5 accent-black rounded cursor-pointer"
               />
               <span>Exclude 0% Scores</span>
-              {excludeZeroScores && (
-                <span className="px-1.5 py-0.2 bg-amber-200 text-amber-900 text-[10px] rounded-full font-black">
-                  ACTIVE
-                </span>
-              )}
             </label>
           </div>
 
           {/* Rows per page selector */}
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+          <div className="flex items-center gap-2 text-xs font-bold text-zinc-500">
             <span>Show:</span>
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+              className="px-2.5 py-1 bg-black/[0.03] border border-black/[0.06] rounded-xl text-xs font-bold text-black"
             >
               <option value={25}>25 / page</option>
               <option value={50}>50 / page</option>
@@ -493,17 +481,19 @@ export default function CandidatesManagementPage() {
       </div>
 
       {/* Table Data Grid */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-2xl border border-black/[0.05] rounded-3xl shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-3">
-            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs text-slate-500 font-bold">Loading Candidate Records...</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs text-zinc-500 font-bold tracking-tight">Loading Candidate Records...</p>
           </div>
         ) : filteredCandidates.length === 0 ? (
           <div className="text-center py-20 space-y-3">
-            <Table className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-sm font-bold text-slate-800">No Candidates Found</p>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-black/[0.04] text-black flex items-center justify-center mx-auto">
+              <Table className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-black text-black tracking-tight">No Candidates Found</p>
+            <p className="text-xs text-zinc-500 max-w-md mx-auto font-medium tracking-tight">
               {candidates.length === 0
                 ? "The candidate database is currently empty for this assessment. Use 'Upload Excel Candidates' in Exams & Assessments to add candidate batches."
                 : "No candidates match your search term or filter selection."}
@@ -513,20 +503,20 @@ export default function CandidatesManagementPage() {
           <div className="overflow-x-auto w-full">
             <table className="w-full min-w-[1250px] text-left border-collapse border-spacing-0 font-sans text-xs">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-black uppercase text-slate-500 tracking-wider">
-                  <th className="py-3.5 px-4 text-center w-12 whitespace-nowrap">#</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Candidate Details</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">CRM Application ID</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Exam Session</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Vendor</th>
-                  <th className="py-3.5 px-4 text-center whitespace-nowrap">Security Warnings</th>
-                  <th className="py-3.5 px-4 text-center whitespace-nowrap">Status</th>
-                  <th className="py-3.5 px-4 text-center whitespace-nowrap">Score Marks</th>
-                  <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
+                <tr className="bg-black/[0.02] border-b border-black/[0.06] text-[11px] font-bold uppercase text-zinc-500 tracking-wider">
+                  <th className="py-4 px-4 text-center w-12 whitespace-nowrap">#</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Candidate Details</th>
+                  <th className="py-4 px-4 whitespace-nowrap">CRM Application ID</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Exam Session</th>
+                  <th className="py-4 px-4 whitespace-nowrap">Vendor</th>
+                  <th className="py-4 px-4 text-center whitespace-nowrap">Security Warnings</th>
+                  <th className="py-4 px-4 text-center whitespace-nowrap">Status</th>
+                  <th className="py-4 px-4 text-center whitespace-nowrap">Score Marks</th>
+                  <th className="py-4 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-black/[0.04] font-medium text-black">
                 {paginatedCandidates.map((c, idx) => {
                   const rowNumber = startIndex + idx + 1;
                   const isLocked = c.status === "LOCKED" || c.attempt?.status === "LOCKED";
@@ -537,29 +527,27 @@ export default function CandidatesManagementPage() {
                   return (
                     <tr
                       key={c.id}
-                      className={`hover:bg-slate-50/80 transition ${
-                        isLocked ? "bg-red-50/40" : ""
-                      }`}
+                      className="hover:bg-black/[0.015] transition-colors"
                     >
                       {/* Row Index */}
-                      <td className="py-3.5 px-4 text-center font-mono text-[11px] text-slate-400 font-bold">
+                      <td className="py-4 px-4 text-center font-mono text-[11px] text-zinc-400 font-bold">
                         {rowNumber}
                       </td>
 
                       {/* Candidate Name & Contact */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-extrabold text-slate-900">{c.name}</div>
-                        <div className="text-[11px] text-slate-400">{c.email} • {c.phone}</div>
+                      <td className="py-4 px-4">
+                        <div className="font-black text-black tracking-tight">{c.name}</div>
+                        <div className="text-[11px] text-zinc-400 tracking-tight">{c.email} • {c.phone}</div>
                         <div className="flex items-center gap-1.5 mt-1">
                           <button
                             onClick={() => setSelectedHistoryCandidate({ id: c.id, name: c.name })}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 transition cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/[0.03] hover:bg-black/[0.06] text-black border border-black/[0.06] transition cursor-pointer"
                             title="Click to view attempt & reset logs"
                           >
-                            <History size={10} className="text-blue-600" />
+                            <History size={10} className="text-black" />
                             <span>Attempt #{c.totalAttemptsCount || (c.attempts?.length > 0 ? c.attempts.length : 1)}</span>
                             {c.resetsCount > 0 && (
-                              <span className="text-[9px] bg-rose-100 text-rose-700 px-1 rounded font-bold">
+                              <span className="text-[9px] bg-black/[0.08] text-black px-1.5 rounded-full font-bold ml-0.5">
                                 {c.resetsCount} reset
                               </span>
                             )}
@@ -568,107 +556,107 @@ export default function CandidatesManagementPage() {
                       </td>
 
                       {/* Application ID */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                      <td className="py-4 px-4">
+                        <span className="font-mono text-xs font-bold text-black bg-black/[0.03] px-2.5 py-1 rounded-xl border border-black/[0.06]">
                           {c.applicationId || c.referenceId || "N/A"}
                         </span>
                       </td>
 
                       {/* Assessment */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-800">{c.assessment?.name || "Assessment"}</div>
-                        <div className="text-[10px] text-blue-600 font-bold">{c.assessment?.slug}</div>
+                      <td className="py-4 px-4">
+                        <div className="font-black text-black tracking-tight">{c.assessment?.name || "Assessment"}</div>
+                        <div className="text-[10px] text-zinc-500 font-mono tracking-tight">{c.assessment?.slug}</div>
                       </td>
 
                       {/* Vendor / Agency */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         {c.vendor ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/[0.03] text-black font-bold text-[11px] border border-black/[0.06]">
                             <Building2 size={11} />
                             <span>{c.vendor.name}</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-slate-400">Direct / Admin</span>
+                          <span className="text-[11px] font-bold text-zinc-400">Direct / Admin</span>
                         )}
                       </td>
 
                       {/* Warnings */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-4 px-4 text-center">
                         <div className="inline-flex items-center space-x-1.5 font-bold text-xs">
                           {isLocked ? (
-                            <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+                            <ShieldAlert className="w-4 h-4 text-black shrink-0" />
                           ) : (
-                            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                            <AlertTriangle className="w-4 h-4 text-zinc-400 shrink-0" />
                           )}
-                          <span className={isLocked ? "text-red-700 font-black" : warnings > 0 ? "text-amber-700" : "text-slate-600"}>
+                          <span className={isLocked ? "text-black font-black" : warnings > 0 ? "text-black font-bold" : "text-zinc-500"}>
                             {warnings} / {maxWarnings}
                           </span>
                         </div>
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-4 px-4 text-center">
                         {isLocked ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-black bg-black/[0.05] px-2.5 py-1 rounded-full border border-black/[0.1]">
                             <Lock className="w-3 h-3" /> LOCKED
                           </span>
                         ) : c.status === "COMPLETED" ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-black bg-black/[0.04] px-2.5 py-1 rounded-full border border-black/[0.08]">
                             <CheckCircle2 className="w-3 h-3" /> Completed
                           </span>
                         ) : c.status === "IN_PROGRESS" ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-black bg-black/[0.04] px-2.5 py-1 rounded-full border border-black/[0.08]">
                             In Progress
                           </span>
                         ) : c.status === "DISQUALIFIED" ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-zinc-700 bg-black/[0.04] px-2.5 py-1 rounded-full border border-black/[0.08]">
                             Disqualified
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase text-zinc-500 bg-black/[0.02] px-2.5 py-1 rounded-full border border-black/[0.06]">
                             Registered
                           </span>
                         )}
                       </td>
 
                       {/* Score Marks */}
-                      <td className="py-3.5 px-4 text-center font-mono">
+                      <td className="py-4 px-4 text-center font-mono">
                         {c.status === "COMPLETED" ? (
                           <div>
-                            <span className="font-extrabold text-xs text-slate-900">
+                            <span className="font-black text-xs text-black">
                               {c.attempt?.score || 0} / {c.attempt?.totalPossibleScore || 60}
                             </span>
-                            <div className="text-[10px] font-bold text-emerald-600">
+                            <div className="text-[10px] font-bold text-zinc-500">
                               ({c.attempt?.percentage || 0}%)
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-[11px]">—</span>
+                          <span className="text-zinc-400 text-[11px]">—</span>
                         )}
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
                           {/* View Report Card Button for Completed Candidates */}
                           {isCompleted && (
                             <>
                               <button
                                 onClick={() => handleDownloadSingleExcel(c.id)}
                                 title="Download Individual Candidate Excel Report (4 Sheets)"
-                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-extrabold text-[11px] rounded-lg border border-emerald-200 transition flex items-center space-x-1 cursor-pointer"
+                                className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black font-bold text-[11px] rounded-xl border border-black/[0.06] transition flex items-center space-x-1 cursor-pointer"
                               >
-                                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-black" />
                                 <span>Excel</span>
                               </button>
 
                               <button
                                 onClick={() => handleOpenReport(c.id)}
                                 title="View Detailed Diagnostic Report Card"
-                                className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-[11px] rounded-lg border border-blue-200 transition flex items-center space-x-1 cursor-pointer"
+                                className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black font-bold text-[11px] rounded-xl border border-black/[0.06] transition flex items-center space-x-1 cursor-pointer"
                               >
-                                <FileText className="w-3.5 h-3.5 text-blue-600" />
-                                <span>Report Card</span>
+                                <FileText className="w-3.5 h-3.5 text-black" />
+                                <span>Report</span>
                               </button>
                             </>
                           )}
@@ -679,16 +667,16 @@ export default function CandidatesManagementPage() {
                               <button
                                 onClick={() => handleOpenReport(c.id)}
                                 title="View Security Audit Report"
-                                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-[11px] rounded-lg border border-amber-200 transition flex items-center space-x-1 cursor-pointer"
+                                className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black font-bold text-[11px] rounded-xl border border-black/[0.06] transition flex items-center space-x-1 cursor-pointer"
                               >
-                                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                                <ShieldAlert className="w-3.5 h-3.5 text-black" />
                                 <span>Audit Log</span>
                               </button>
 
                               <button
                                 onClick={() => handleUnlock(c.id, c.name)}
                                 disabled={actionLoadingId === c.id}
-                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg transition shadow-2xs flex items-center space-x-1 cursor-pointer"
+                                className="px-3 py-1.5 bg-black hover:bg-black/85 text-white font-bold text-[11px] rounded-xl transition shadow-xs flex items-center space-x-1 cursor-pointer"
                               >
                                 <Unlock className="w-3 h-3" />
                                 <span>{actionLoadingId === c.id ? "Unlocking..." : "Unlock"}</span>
@@ -701,36 +689,35 @@ export default function CandidatesManagementPage() {
                             <button
                               onClick={() => handleOpenAssignVendor(c)}
                               title="Assign / Reassign Candidate to Vendor"
-                              className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-[11px] rounded-lg border border-blue-200 transition flex items-center space-x-1 cursor-pointer"
+                              className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black font-bold text-[11px] rounded-xl border border-black/[0.06] transition flex items-center space-x-1 cursor-pointer"
                             >
-                              <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Assign Vendor</span>
+                              <Building2 className="w-3.5 h-3.5 text-black" />
+                              <span>Assign</span>
                             </button>
                           )}
 
-                          {/* Reset Candidate Attempt & Re-invite Button */}
+                          {/* History and Reset Buttons */}
                           <button
                             onClick={() => setSelectedHistoryCandidate({ id: c.id, name: c.name })}
                             title="View Full Attempt & Reset Audit Logs"
-                            className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-lg border border-slate-200 transition flex items-center space-x-1 cursor-pointer"
+                            className="p-1.5 bg-white hover:bg-black/[0.04] text-black font-bold text-[11px] rounded-xl border border-black/[0.06] transition flex items-center cursor-pointer"
                           >
-                            <History className="w-3.5 h-3.5 text-blue-600" />
-                            <span>History</span>
+                            <History className="w-3.5 h-3.5 text-black" />
                           </button>
 
                           <button
                             onClick={() => setResetCandidateTarget({ id: c.id, name: c.name, email: c.email })}
-                            title="Reset Candidate Attempt & Resend Invitation (Clean & Send)"
-                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-[11px] rounded-lg border border-amber-200 transition flex items-center space-x-1 cursor-pointer"
+                            title="Reset Candidate Attempt & Resend Invitation"
+                            className="px-2.5 py-1.5 bg-white hover:bg-black/[0.04] text-black font-bold text-[11px] rounded-xl border border-black/[0.06] transition flex items-center space-x-1 cursor-pointer"
                           >
-                            <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Reset & Send</span>
+                            <RotateCcw className="w-3.5 h-3.5 text-black" />
+                            <span>Reset</span>
                           </button>
 
                           <button
                             onClick={() => setDeleteCandidateTarget({ id: c.id, name: c.name })}
                             title="Delete Candidate Record"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                            className="p-1.5 rounded-xl border border-black/[0.06] bg-white text-zinc-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -746,32 +733,32 @@ export default function CandidatesManagementPage() {
 
         {/* 50 Per Page Pagination Footer */}
         {filteredCandidates.length > 0 && (
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-slate-600">
+          <div className="p-4 bg-black/[0.01] border-t border-black/[0.06] flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-zinc-600">
             <div>
-              Showing <span className="text-slate-900 font-black">{startIndex + 1}</span> to{" "}
-              <span className="text-slate-900 font-black">{endIndex}</span> of{" "}
-              <span className="text-slate-900 font-black">{filteredCandidates.length}</span> candidates
+              Showing <span className="text-black font-bold">{startIndex + 1}</span> to{" "}
+              <span className="text-black font-bold">{endIndex}</span> of{" "}
+              <span className="text-black font-bold">{filteredCandidates.length}</span> candidates
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 flex items-center gap-1 cursor-pointer"
+                className="p-2 bg-white border border-black/[0.06] rounded-xl text-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/[0.04] flex items-center gap-1 cursor-pointer"
               >
-                <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
 
-              <span className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-blue-600 font-black">
+              <span className="px-3 py-1.5 bg-black text-white rounded-xl text-xs font-bold">
                 Page {currentPage} of {totalPages}
               </span>
 
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 flex items-center gap-1 cursor-pointer"
+                className="p-2 bg-white border border-black/[0.06] rounded-xl text-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/[0.04] flex items-center gap-1 cursor-pointer"
               >
-                Next <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

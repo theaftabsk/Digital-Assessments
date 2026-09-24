@@ -108,6 +108,10 @@ export class AssessmentsService {
         totalQuestions: qBank?._count?.questions || TOTAL_QUESTIONS,
         questionBankId: ass.questionBankId,
         questionBankName: qBank?.name || null,
+        enableTabSwitch: ass.enableTabSwitch ?? true,
+        enableFullscreen: ass.enableFullscreen ?? true,
+        enableCopyPaste: ass.enableCopyPaste ?? true,
+        enableCamera: (ass as any).enableCamera ?? true,
         questionBank: qBank ? {
           id: qBank.id,
           name: qBank.name,
@@ -187,6 +191,10 @@ export class AssessmentsService {
       activeUntil?: string;
       passingPercentage?: number;
       maxProctorWarnings?: number;
+      enableTabSwitch?: boolean;
+      enableFullscreen?: boolean;
+      enableCopyPaste?: boolean;
+      enableCamera?: boolean;
       status?: string;
       assignedVendorIds?: string[];
     },
@@ -242,6 +250,10 @@ export class AssessmentsService {
       durationMins: data.durationMins !== undefined ? Number(data.durationMins) : 45,
       passingPercentage: data.passingPercentage !== undefined ? Number(data.passingPercentage) : 50,
       maxProctorWarnings: data.maxProctorWarnings !== undefined ? Number(data.maxProctorWarnings) : 6,
+      enableTabSwitch: data.enableTabSwitch !== undefined ? Boolean(data.enableTabSwitch) : true,
+      enableFullscreen: data.enableFullscreen !== undefined ? Boolean(data.enableFullscreen) : true,
+      enableCopyPaste: data.enableCopyPaste !== undefined ? Boolean(data.enableCopyPaste) : true,
+      enableCamera: data.enableCamera !== undefined ? Boolean(data.enableCamera) : true,
       status: data.status || 'ACTIVE',
       ...(finalActiveFrom !== undefined && { activeFrom: finalActiveFrom }),
       ...(finalActiveUntil !== undefined && { activeUntil: finalActiveUntil }),

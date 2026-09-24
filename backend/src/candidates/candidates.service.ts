@@ -475,6 +475,11 @@ export class CandidatesService {
         remainingTimeSec,
         maxProctorWarnings: activeAttempt.maxProctorWarningsSnapshot,
         warningCount: activeAttempt.warningCount,
+        enableTabSwitch: candidate.assessment.enableTabSwitch ?? true,
+        enableFullscreen: candidate.assessment.enableFullscreen ?? true,
+        enableCopyPaste: candidate.assessment.enableCopyPaste ?? true,
+        enableCamera: (candidate.assessment as any).enableCamera ?? true,
+        passingPercentage: activeAttempt.passingPercentageSnapshot || candidate.assessment.passingPercentage || 50,
         questions: activeAttempt.attemptQuestions.map((aq) => ({
           attemptQuestionId: aq.id,
           id: aq.question.id,
@@ -593,6 +598,11 @@ export class CandidatesService {
       durationMins: createdAttempt.durationMinsSnapshot,
       maxProctorWarnings: createdAttempt.maxProctorWarningsSnapshot,
       warningCount: 0,
+      enableTabSwitch: candidate.assessment.enableTabSwitch ?? true,
+      enableFullscreen: candidate.assessment.enableFullscreen ?? true,
+      enableCopyPaste: candidate.assessment.enableCopyPaste ?? true,
+      enableCamera: (candidate.assessment as any).enableCamera ?? true,
+      passingPercentage: createdAttempt.passingPercentageSnapshot || candidate.assessment.passingPercentage || 50,
       questions: createdAttempt.attemptQuestions.map((aq) => ({
         attemptQuestionId: aq.id,
         id: aq.question.id,

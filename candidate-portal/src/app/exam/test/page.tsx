@@ -53,6 +53,13 @@ export default function CandidateTestEngine() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [proctorConfig, setProctorConfig] = useState({
+    enableTabSwitch: true,
+    enableFullscreen: true,
+    enableCopyPaste: true,
+    enableCamera: true,
+  });
+
   // Initialize Exam Session
   useEffect(() => {
     const stored = localStorage.getItem("banca_candidate");
@@ -118,6 +125,15 @@ export default function CandidateTestEngine() {
         setTimeLeftSec(calculatedTime);
         setMaxProctorWarnings(data.maxProctorWarnings || 6);
         setWarningCount(data.warningCount || 0);
+
+        if (data.enableTabSwitch !== undefined || data.enableFullscreen !== undefined) {
+          setProctorConfig({
+            enableTabSwitch: data.enableTabSwitch !== false,
+            enableFullscreen: data.enableFullscreen !== false,
+            enableCopyPaste: data.enableCopyPaste !== false,
+            enableCamera: data.enableCamera !== false,
+          });
+        }
 
         // Pre-fill answers if returning to active session
         const initAnswers: Record<string, { selectedOption: string | null; timeTakenSec: number }> = {};
@@ -250,23 +266,27 @@ export default function CandidateTestEngine() {
     if (loading || !attemptId || disqualified) return;
 
     const onVisibilityChange = () => {
+      if (!proctorConfig.enableTabSwitch) return;
       if (document.hidden) {
         reportProctoringViolation("TAB_SWITCH", `Tab switch detected at ${new Date().toLocaleTimeString()}`);
       }
     };
 
     const onFullscreenChange = () => {
+      if (!proctorConfig.enableFullscreen) return;
       if (!document.fullscreenElement) {
         reportProctoringViolation("FULLSCREEN_EXIT", `Fullscreen exit detected at ${new Date().toLocaleTimeString()}`);
       }
     };
 
     const onContextMenu = (e: MouseEvent) => {
+      if (!proctorConfig.enableCopyPaste) return;
       e.preventDefault();
       reportProctoringViolation("RIGHT_CLICK", "Right click attempted.");
     };
 
     const onCopyPaste = (e: ClipboardEvent) => {
+      if (!proctorConfig.enableCopyPaste) return;
       e.preventDefault();
       reportProctoringViolation("COPY_PASTE", `Copy/Paste attempted: ${e.type}`);
     };
@@ -762,7 +782,7 @@ export default function CandidateTestEngine() {
       )}
 
       {/* LIVE CAMERA PROCTORING PIP & SCREENSHOT CAPTURE ENGINE */}
-      {!loading && !disqualified && attemptId && (
+      {!loading && !disqualified && attemptId && proctorConfig.enableCamera && (
         <CameraProctor
           mode="exam"
           attemptId={attemptId}

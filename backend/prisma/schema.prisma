@@ -101,6 +101,7 @@ model Assessment {
   enableTabSwitch    Boolean            @default(true)
   enableFullscreen   Boolean            @default(true)
   enableCopyPaste    Boolean            @default(true)
+  enableCamera       Boolean            @default(true)
   status             String             @default("ACTIVE") // ACTIVE, DRAFT, INACTIVE, ARCHIVED
   activeFrom         DateTime?          // When the session link becomes accessible to candidates
   activeUntil        DateTime?          // When the session link expires

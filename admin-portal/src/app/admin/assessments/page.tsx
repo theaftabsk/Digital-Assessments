@@ -56,6 +56,10 @@ interface AssessmentSession {
   totalCandidates: number;
   passingPercentage: number;
   maxProctorWarnings: number;
+  enableTabSwitch?: boolean;
+  enableFullscreen?: boolean;
+  enableCopyPaste?: boolean;
+  enableCamera?: boolean;
   uniqueCandidateLink: string;
   questionBankId?: string;
   questionBankName?: string;
@@ -188,14 +192,20 @@ export default function AdminAssessmentsPage() {
     description: "",
     questionBankId: "",
     durationMins: 45,
+    passingPercentage: 50,
+    maxProctorWarnings: 6,
+    enableTabSwitch: true,
+    enableFullscreen: true,
+    enableCopyPaste: true,
+    enableCamera: true,
     activeFrom: "",
     activeUntil: "",
-    passingPercentage: 50,
-    maxProctorWarnings: 3,
     status: "ACTIVE",
+    assignedVendorIds: [] as string[],
   };
   const [form, setForm] = useState({ ...emptyForm });
   const [questionBanks, setQuestionBanks] = useState<QuestionBankSummary[]>([]);
+  const [availableVendors, setAvailableVendors] = useState<Array<{ id: string; name: string; vendorCode: string }>>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -238,6 +248,19 @@ export default function AdminAssessmentsPage() {
       } catch (e) {
         console.error("Failed to load question banks:", e);
       }
+
+      // Load available vendors
+      try {
+        const vRes = await fetch(`${getApiBaseUrl()}/api/v1/vendors`, { headers });
+        const vData = await vRes.json();
+        if (Array.isArray(vData)) {
+          setAvailableVendors(vData);
+        } else if (vData.success && Array.isArray(vData.vendors)) {
+          setAvailableVendors(vData.vendors);
+        }
+      } catch (e) {
+        console.error("Failed to load vendors:", e);
+      }
     } catch {
       /* silent */
     } finally {
@@ -271,11 +294,16 @@ export default function AdminAssessmentsPage() {
       description: session.description || "",
       questionBankId: session.questionBankId || "",
       durationMins: session.durationMins || 45,
+      passingPercentage: session.passingPercentage || 50,
+      maxProctorWarnings: session.maxProctorWarnings || 6,
+      enableTabSwitch: session.enableTabSwitch !== false,
+      enableFullscreen: session.enableFullscreen !== false,
+      enableCopyPaste: session.enableCopyPaste !== false,
+      enableCamera: session.enableCamera !== false,
       activeFrom: formatDatetimeLocal(session.activeFrom),
       activeUntil: formatDatetimeLocal(session.activeUntil),
-      passingPercentage: session.passingPercentage,
-      maxProctorWarnings: session.maxProctorWarnings,
       status: session.status === "INACTIVE" || session.status === "DRAFT" ? session.status : "ACTIVE",
+      assignedVendorIds: session.vendorAssignments?.map((v) => v.vendorId).filter(Boolean) as string[] || [],
     });
     setFormError("");
     setShowEditModal(true);
@@ -314,11 +342,16 @@ export default function AdminAssessmentsPage() {
         description: form.description || undefined,
         questionBankId: form.questionBankId || null,
         durationMins: Number(form.durationMins) || 45,
+        passingPercentage: Number(form.passingPercentage) || 50,
+        maxProctorWarnings: Number(form.maxProctorWarnings) || 6,
+        enableTabSwitch: form.enableTabSwitch,
+        enableFullscreen: form.enableFullscreen,
+        enableCopyPaste: form.enableCopyPaste,
+        enableCamera: form.enableCamera,
         activeFrom: isoActiveFrom,
         activeUntil: isoActiveUntil,
-        passingPercentage: Number(form.passingPercentage),
-        maxProctorWarnings: Number(form.maxProctorWarnings),
         status: form.status,
+        assignedVendorIds: form.assignedVendorIds,
       };
       if (isEdit && editTarget) payload.id = editTarget.id;
 
@@ -673,7 +706,7 @@ export default function AdminAssessmentsPage() {
                         <StatusBadge status={computedStatus} />
                       </td>
 
-                      {/* Col 3: Configuration & Question Bank */}
+                      {/* Col 3: Configuration & Controls */}
                       <td className="py-3.5 px-3">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex flex-wrap items-center gap-1.5">
@@ -683,19 +716,43 @@ export default function AdminAssessmentsPage() {
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
                               <Clock size={10} /> {session.durationMins || EXAM_DURATION_MINS} Mins
                             </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold border border-slate-200">
+                              Pass {session.passingPercentage || 50}%
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-[10px] font-extrabold border border-rose-200">
+                              {session.maxProctorWarnings || 6} Warns
+                            </span>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200">
                               <Users size={10} /> {session.totalCandidates} Users
                             </span>
                           </div>
-                          {session.questionBankName ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/[0.04] text-black text-[10px] font-bold border border-black/10 w-fit">
-                              <Layers size={10} /> Bank: {session.questionBankName}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              Default Shared Bank
-                            </span>
-                          )}
+
+                          <div className="flex flex-wrap items-center gap-1">
+                            {session.enableCamera !== false && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] text-zinc-700 font-semibold" title="Camera Monitoring Enabled">
+                                📷 Cam
+                              </span>
+                            )}
+                            {session.enableTabSwitch !== false && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] text-zinc-700 font-semibold" title="Tab Switch Detection Enabled">
+                                🔀 Tab
+                              </span>
+                            )}
+                            {session.enableFullscreen !== false && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] text-zinc-700 font-semibold" title="Fullscreen Enforced">
+                                ⛶ Fullscreen
+                              </span>
+                            )}
+                            {session.questionBankName ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/[0.04] text-black text-[10px] font-bold border border-black/10">
+                                <Layers size={10} /> {session.questionBankName}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                Default Bank
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
 
@@ -823,7 +880,7 @@ export default function AdminAssessmentsPage() {
       {/* ── 5. Create / Edit Assessment Modal ── */}
       {(showCreateModal || showEditModal) && (
         <div
-          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowCreateModal(false);
@@ -831,135 +888,394 @@ export default function AdminAssessmentsPage() {
             }
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-base font-extrabold text-slate-900">
-                {showCreateModal ? "Create Assessment Session" : "Edit Assessment Session"}
-              </h2>
+          <div className="bg-white rounded-3xl shadow-2xl border border-black/[0.08] max-w-2xl w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+              <div>
+                <h2 className="text-base font-black text-black">
+                  {showCreateModal ? "Create Assessment Session" : "Edit Assessment Session"}
+                </h2>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Full manual configuration for questions, timing, proctoring security, and access rules.
+                </p>
+              </div>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   setShowEditModal(false);
                 }}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1 rounded-lg text-zinc-400 hover:text-black hover:bg-black/[0.04] cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Question Bank Selector */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">
-                <BookOpen size={12} className="inline mr-1 text-slate-400" />
-                Select Question Bank *
-              </label>
-              <select
-                value={form.questionBankId}
-                onChange={(e) => setForm({ ...form, questionBankId: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 cursor-pointer"
-              >
-                <option value="">Default Shared Bank (60 Questions · 45 Mins)</option>
-                {questionBanks.map((qb) => (
-                  <option key={qb.id} value={qb.id}>
-                    {qb.name} ({qb.questionCount} Questions{qb.category ? ` · ${qb.category}` : ""})
-                  </option>
-                ))}
-              </select>
-              {(() => {
-                const selected = questionBanks.find((b) => b.id === form.questionBankId);
-                if (selected) {
-                  return (
-                    <div className="p-2 rounded-xl bg-slate-100 text-slate-800 text-[11px] font-semibold flex items-center gap-2 border border-slate-200">
-                      <Layers size={13} className="text-slate-600 shrink-0" />
-                      <span>
-                        Linked: <strong>{selected.name}</strong> · {selected.questionCount} Questions ({selected.totalMarks} Total Marks)
-                      </span>
-                    </div>
-                  );
-                }
-                return (
-                  <div className="p-2 rounded-xl bg-slate-50 text-slate-600 text-[11px] font-semibold flex items-center gap-2 border border-slate-200">
-                    <Zap size={13} className="text-slate-400 shrink-0" />
-                    <span>Using default shared question pool (Standard 60 questions)</span>
-                  </div>
-                );
-              })()}
-            </div>
-
             {formError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 flex items-center gap-2">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-bold text-red-700 flex items-center gap-2">
                 <AlertCircle size={15} /> {formError}
               </div>
             )}
 
-            <div className="space-y-3">
+            {/* ── SECTION 1: General Info & Question Bank ── */}
+            <div className="space-y-3 bg-black/[0.02] p-4 rounded-2xl border border-black/[0.05]">
+              <h3 className="text-xs font-black text-black uppercase tracking-wider flex items-center gap-1.5">
+                <BookOpen size={13} /> 1. Session Info & Question Bank
+              </h3>
+
               <div>
-                <label className="block text-xs font-extrabold text-slate-700 mb-1">Session Title / Role *</label>
+                <label className="block text-xs font-extrabold text-zinc-700 mb-1">Session Title / Role *</label>
                 <input
                   type="text"
                   placeholder="e.g. Agency Unit Manager & ARM Banca Assessment"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs font-bold text-black focus:outline-none focus:border-black"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Description (optional)</label>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Description (optional)</label>
                 <input
                   type="text"
                   placeholder="Brief note for candidates or internal record"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs font-medium text-black focus:outline-none focus:border-black"
                 />
               </div>
 
+              {/* Question Bank Selector */}
+              <div>
+                <label className="block text-xs font-extrabold text-zinc-700 mb-1">
+                  Select Question Bank *
+                </label>
+                <select
+                  value={form.questionBankId}
+                  onChange={(e) => setForm({ ...form, questionBankId: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs font-bold text-black focus:outline-none focus:border-black cursor-pointer"
+                >
+                  <option value="">Default Shared Bank (60 Questions · 45 Mins)</option>
+                  {questionBanks.map((qb) => (
+                    <option key={qb.id} value={qb.id}>
+                      {qb.name} ({qb.questionCount} Questions{qb.category ? ` · ${qb.category}` : ""})
+                    </option>
+                  ))}
+                </select>
+                {(() => {
+                  const selected = questionBanks.find((b) => b.id === form.questionBankId);
+                  if (selected) {
+                    return (
+                      <div className="mt-1.5 p-2 rounded-xl bg-black/[0.04] text-black text-[11px] font-semibold flex items-center gap-2 border border-black/10">
+                        <Layers size={13} className="shrink-0" />
+                        <span>
+                          Linked: <strong>{selected.name}</strong> · {selected.questionCount} Questions ({selected.totalMarks} Total Marks)
+                        </span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="mt-1.5 p-2 rounded-xl bg-white text-zinc-600 text-[11px] font-semibold flex items-center gap-2 border border-black/[0.05]">
+                      <Zap size={13} className="text-zinc-400 shrink-0" />
+                      <span>Using default shared question pool (Standard 60 questions)</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* ── SECTION 2: Timing, Schedule & Passing Score ── */}
+            <div className="space-y-3 bg-black/[0.02] p-4 rounded-2xl border border-black/[0.05]">
+              <h3 className="text-xs font-black text-black uppercase tracking-wider flex items-center gap-1.5">
+                <Clock size={13} /> 2. Exam Duration, Passing Score & Schedule
+              </h3>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Duration */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    <Calendar size={12} className="inline mr-1 text-slate-400" />
-                    Active From (optional)
+                  <label className="block text-xs font-extrabold text-zinc-700 mb-1">
+                    Exam Duration (Minutes) *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={5}
+                      max={360}
+                      value={form.durationMins}
+                      onChange={(e) => setForm({ ...form, durationMins: Number(e.target.value) || 45 })}
+                      className="w-24 px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs font-black text-black focus:outline-none focus:border-black"
+                    />
+                    <div className="flex flex-wrap items-center gap-1">
+                      {[30, 45, 60, 90].map((mins) => (
+                        <button
+                          key={mins}
+                          type="button"
+                          onClick={() => setForm({ ...form, durationMins: mins })}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer border ${
+                            form.durationMins === mins
+                              ? "bg-black text-white border-black"
+                              : "bg-white text-zinc-600 border-black/[0.08] hover:bg-black/[0.04]"
+                          }`}
+                        >
+                          {mins}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Passing % */}
+                <div>
+                  <label className="block text-xs font-extrabold text-zinc-700 mb-1">
+                    Passing Mark (%) *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={10}
+                      max={100}
+                      value={form.passingPercentage}
+                      onChange={(e) => setForm({ ...form, passingPercentage: Number(e.target.value) || 50 })}
+                      className="w-24 px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs font-black text-black focus:outline-none focus:border-black"
+                    />
+                    <div className="flex flex-wrap items-center gap-1">
+                      {[40, 50, 60, 75].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setForm({ ...form, passingPercentage: pct })}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer border ${
+                            form.passingPercentage === pct
+                              ? "bg-black text-white border-black"
+                              : "bg-white text-zinc-600 border-black/[0.08] hover:bg-black/[0.04]"
+                          }`}
+                        >
+                          {pct}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Schedule Dates */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1">
+                    <Calendar size={12} className="inline mr-1 text-zinc-400" />
+                    Active From (Start Window)
                   </label>
                   <input
                     type="datetime-local"
                     value={form.activeFrom}
                     onChange={(e) => setForm({ ...form, activeFrom: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs text-black focus:outline-none focus:border-black"
                   />
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Leave blank to start immediately</span>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">Leave blank to start immediately</span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    <Calendar size={12} className="inline mr-1 text-slate-400" />
-                    Active Until (optional)
+                  <label className="block text-xs font-bold text-zinc-700 mb-1">
+                    <Calendar size={12} className="inline mr-1 text-zinc-400" />
+                    Active Until (Expiration)
                   </label>
                   <input
                     type="datetime-local"
                     value={form.activeUntil}
                     onChange={(e) => setForm({ ...form, activeUntil: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs text-black focus:outline-none focus:border-black"
                   />
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Leave blank for no expiration</span>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">Leave blank for no expiration</span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                  <option value="DRAFT">DRAFT</option>
-                </select>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            {/* ── SECTION 3: Proctoring & Anti-Cheat Controls (Toggles) ── */}
+            <div className="space-y-3 bg-black/[0.02] p-4 rounded-2xl border border-black/[0.05]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-black uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck size={13} /> 3. Proctoring & Anti-Cheat Controls
+                </h3>
+                <span className="text-[10px] font-bold text-zinc-500">Full Manual ON / OFF</span>
+              </div>
+
+              {/* Toggle 1: Camera */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-black/[0.06]">
+                <div>
+                  <div className="text-xs font-extrabold text-black">📷 Live Camera & Face Monitoring</div>
+                  <div className="text-[11px] text-zinc-500">Requires candidate webcam and captures periodic proctoring snapshots</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, enableCamera: !form.enableCamera })}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    form.enableCamera ? "bg-black" : "bg-zinc-200"
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full bg-white transition-transform block absolute top-1 left-1 ${
+                      form.enableCamera ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Toggle 2: Tab Switch */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-black/[0.06]">
+                <div>
+                  <div className="text-xs font-extrabold text-black">🔀 Tab Switch & Window Blur Detection</div>
+                  <div className="text-[11px] text-zinc-500">Triggers warnings if candidate switches tabs or clicks outside the exam</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, enableTabSwitch: !form.enableTabSwitch })}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    form.enableTabSwitch ? "bg-black" : "bg-zinc-200"
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full bg-white transition-transform block absolute top-1 left-1 ${
+                      form.enableTabSwitch ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Toggle 3: Fullscreen */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-black/[0.06]">
+                <div>
+                  <div className="text-xs font-extrabold text-black">⛶ Fullscreen Enforcement</div>
+                  <div className="text-[11px] text-zinc-500">Enforces full screen mode; exiting full screen counts towards warnings</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, enableFullscreen: !form.enableFullscreen })}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    form.enableFullscreen ? "bg-black" : "bg-zinc-200"
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full bg-white transition-transform block absolute top-1 left-1 ${
+                      form.enableFullscreen ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Toggle 4: Copy Paste */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-black/[0.06]">
+                <div>
+                  <div className="text-xs font-extrabold text-black">📋 Copy-Paste & Right-Click Block</div>
+                  <div className="text-[11px] text-zinc-500">Prevents copying question prompts, right-click inspection, and pasting text</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, enableCopyPaste: !form.enableCopyPaste })}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    form.enableCopyPaste ? "bg-black" : "bg-zinc-200"
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full bg-white transition-transform block absolute top-1 left-1 ${
+                      form.enableCopyPaste ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Warning Threshold */}
+              <div className="p-3 rounded-xl bg-white border border-black/[0.06] space-y-1.5">
+                <label className="block text-xs font-extrabold text-black">
+                  ⚠️ Max Proctoring Warnings Before Auto-Lock
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { count: 1, label: "1 (Strict Lock)" },
+                    { count: 2, label: "2 Warns" },
+                    { count: 3, label: "3 Warns (Recommended)" },
+                    { count: 5, label: "5 Warns" },
+                    { count: 6, label: "6 Warns (Standard)" },
+                    { count: 10, label: "10 Warns (Lenient)" },
+                  ].map((w) => (
+                    <button
+                      key={w.count}
+                      type="button"
+                      onClick={() => setForm({ ...form, maxProctorWarnings: w.count })}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        form.maxProctorWarnings === w.count
+                          ? "bg-black text-white border-black shadow-xs"
+                          : "bg-black/[0.02] text-zinc-700 border-black/[0.06] hover:bg-black/[0.05]"
+                      }`}
+                    >
+                      {w.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── SECTION 4: Status & Vendor Access ── */}
+            <div className="space-y-3 bg-black/[0.02] p-4 rounded-2xl border border-black/[0.05]">
+              <h3 className="text-xs font-black text-black uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 size={13} /> 4. Status & Agency Access
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-extrabold text-zinc-700 mb-1">Session Status</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-black/[0.08] rounded-xl text-xs font-bold text-black focus:outline-none focus:border-black cursor-pointer"
+                  >
+                    <option value="ACTIVE">ACTIVE (Open for testing)</option>
+                    <option value="INACTIVE">INACTIVE (Temporarily closed)</option>
+                    <option value="DRAFT">DRAFT (Under preparation)</option>
+                  </select>
+                </div>
+
+                {availableVendors.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-extrabold text-zinc-700 mb-1">
+                      Assign to Vendor Agencies
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-white rounded-xl border border-black/[0.08]">
+                      {availableVendors.map((v) => {
+                        const isAssigned = form.assignedVendorIds.includes(v.id);
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              if (isAssigned) {
+                                setForm({
+                                  ...form,
+                                  assignedVendorIds: form.assignedVendorIds.filter((id) => id !== v.id),
+                                });
+                              } else {
+                                setForm({
+                                  ...form,
+                                  assignedVendorIds: [...form.assignedVendorIds, v.id],
+                                });
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                              isAssigned
+                                ? "bg-black text-white border-black"
+                                : "bg-black/[0.02] text-zinc-600 border-black/[0.08] hover:bg-black/[0.05]"
+                            }`}
+                          >
+                            {v.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-black/[0.06]">
               <button
                 type="button"
                 disabled={saving}
@@ -967,7 +1283,7 @@ export default function AdminAssessmentsPage() {
                   setShowCreateModal(false);
                   setShowEditModal(false);
                 }}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl border border-black/[0.08] text-xs font-bold text-zinc-600 hover:bg-black/[0.04] cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -975,14 +1291,14 @@ export default function AdminAssessmentsPage() {
                 type="button"
                 disabled={saving}
                 onClick={() => handleSave(showEditModal)}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-black hover:bg-black/85 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 {saving ? (
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
                   <CheckCircle2 size={14} />
                 )}
-                <span>{saving ? "Saving..." : showEditModal ? "Update Session" : "Create Session"}</span>
+                <span>{saving ? "Saving..." : showEditModal ? "Update Assessment Session" : "Create Assessment Session"}</span>
               </button>
             </div>
           </div>

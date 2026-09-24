@@ -51,6 +51,10 @@ export class AssessmentsController {
       activeUntil?: string;
       passingPercentage?: number;
       maxProctorWarnings?: number;
+      enableTabSwitch?: boolean;
+      enableFullscreen?: boolean;
+      enableCopyPaste?: boolean;
+      enableCamera?: boolean;
       status?: string;
       assignedVendorIds?: string[];
     },
@@ -78,6 +82,10 @@ export class AssessmentsController {
       activeUntil?: string;
       passingPercentage?: number;
       maxProctorWarnings?: number;
+      enableTabSwitch?: boolean;
+      enableFullscreen?: boolean;
+      enableCopyPaste?: boolean;
+      enableCamera?: boolean;
       status?: string;
       assignedVendorIds?: string[];
     },
@@ -104,6 +112,10 @@ export class AssessmentsController {
       activeUntil?: string;
       passingPercentage?: number;
       maxProctorWarnings?: number;
+      enableTabSwitch?: boolean;
+      enableFullscreen?: boolean;
+      enableCopyPaste?: boolean;
+      enableCamera?: boolean;
       status?: string;
       assignedVendorIds?: string[];
     },
